@@ -1,9 +1,11 @@
 import block
 import wallet
+import transaction
+import blockchain
 
 class node:
     def _init_():
-        self.BCC=100;
+        self.BCC=100
         #self.chain
         #self.current_id_count
         #self.NBCs
@@ -13,11 +15,15 @@ class node:
 
     def create_new_block():
 
-    def create_wallet(): #create a wallet for this node, with a piblic key and a private key
+    def generate_wallet(): #create a wallet for this node, with a public key and a private key
 
+    def sign_transaction():
+    
     def create_transaction(sender, receiver, signature): #remember to broadcast it
 
     def broadcast_transaction():
+
+    def verify_signature():
 
     def validate_transaction(): #use of signature and BCCs balance
 
@@ -26,3 +32,9 @@ class node:
     def mine_block():
 
     def broadcast_block():
+
+    def validate_block():
+
+    def validate_chain():
+
+    def stake(amount):

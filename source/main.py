@@ -9,4 +9,4 @@ import transaction
 
 app = Flask(__name__)
 CORS(app)
-blockchain = Blockchain()
+#blockchain = Blockchain()
