@@ -12,14 +12,15 @@ class node:
         #self.NBCs
         #self.wallet
         self.ring = []
+        self.current_block = None
         #self.ring[] #here we store information for every node(id, adrdress (ip:port), public key, balance)
 
     def create_new_block():
-
+        self.current_block=block.Block(self.current_block.current_hash)
     def register_node_to_ring(self, id, ip, port, public_key, balance):
         """Registers a new node in the ring, called only by the bootstrap node"""
 
-        self.ring.append(
+        self.ring.append(   
             {
                 'id': id,
                 'ip': ip,
@@ -29,6 +30,7 @@ class node:
             })
 
     def generate_wallet(): #create a wallet for this node, with a public key and a private key
+        wallet.Wallet() #prepei kapos na stelnoume piso to publick key
 
     def sign_transaction():
     
