@@ -5,7 +5,7 @@ import base64
 
 
 class Transaction:
-    def _init_(self, sender_address,type_of_transaction,nonce, message, sender_private_key, recipient_address, value):
+    def _init_(self, sender_address,nonce,recipient_address,recipient_port , value, message ):
         #self.sender_address: to public key tou wallet apo to opoio proerxontai ta xrimata
         #self.receiver_address: public key
         #self.transaction_id: to hash tou transaction
