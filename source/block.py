@@ -3,6 +3,8 @@ import time
 import json
 from Crypto.Hash import SHA256
 
+capacity = 3
+
 class Block:
     def __init__(self, previous_hash):
         self.previous_hash = previous_hash
@@ -14,7 +16,12 @@ class Block:
         self.current_hash = None
 
     def myHash(self): #calculates hash using sha, pairnei parametro self 
-        hash_message = {self.previous_hash, self.timestamp, self.index} # dictionary me ta stoixeia tou block
+        hash_message = {
+        'previous_hash': self.previous_hash,
+        'timestamp': self.timestamp,
+        'index': self.index
+        }
+        # dictionary me ta stoixeia tou block
         block_dump = json.dumps(hash_message.__str__()) #to kanoume json
         hash = SHA256.new(block_dump.encode("ISO-8859-1")).hexdigest()
         self.current_hash = hash
@@ -26,5 +33,7 @@ class Block:
             return True
         else:
             print("Block is at capacity !!!")
+            #create new block here
+            #add to blockchain here after validationc
             return False
     
