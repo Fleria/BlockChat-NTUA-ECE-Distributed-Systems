@@ -16,13 +16,16 @@ class node:
         self.BCC = 100
         self.nonce=0
         self.wallet = self.generate_wallet()
-        self.ring = {self.wallet.address : [0, ip, port, self.BCC]} #store information for every node(id, adrdress (ip:port), public key, balance)
+        self.ring = {self.wallet.address : [0, ip, port, self.BCC,0]} #store information for every node(id, adrdress (ip:port), public key, balance)
         self.current_block = None
         self.blockchain = blockchain.Blockchain()
         self.PoS_select = Lock()
         self.current_validator = None
         self.bootstrap_addr = None
         self.bootstrap_port=None
+
+    def stake(self,amount): 
+        self.create_transaction(0,0,amount,None)
 
     def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap
         self.ring[public_key] = [id, ip, port, balance]
@@ -35,8 +38,9 @@ class node:
     
     def create_transaction(self, receiver_ad, receiver_port, amount , message): #remember to broadcast it
         trans = transaction.Transaction(self.wallet.address,self.nonce,receiver_ad,receiver_port,amount,message )
-        self.nonce += 1
-        trans.signature = self.sign_transaction()
+        self.wallet.nonce += 1
+        trans.hashTransaction()
+        trans.sign_transaction()
         self.broadcast_transaction(trans)
 
     def broadcast_transaction(self,transaction):
@@ -48,12 +52,16 @@ class node:
                 return 
             else :
                 return False
-        endpoint='/receive_transaction'
-        for node in self.ring :
-            address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-            response = requests.post(address,transaction)#prepei na broume pos na steiloyme to transaction
-            if response.status_code == 'correct' :#prepei na orisoume to correct. Giati ginetai prota validate kai meta add_to_block.
-                return 
+        if transaction.recipient_address == 0 :
+            self.ring[transaction.sender_address][3]+=self.ring[transaction.sender_address][4]
+            self.ring[transaction.sender_address][4]=transaction.amount
+        else :
+            endpoint='/receive_transaction'
+            for node in self.ring :
+                address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
+                response = requests.post(address,transaction)#prepei na broume pos na steiloyme to transaction
+                if response.status_code == 'correct' :#prepei na orisoume to correct. Giati ginetai prota validate kai meta add_to_block.
+                    return 
         
     
 
@@ -68,32 +76,24 @@ class node:
         if self.current_block.check_and_add_transaction(transaction) :
             return True
         else :
-            #execute proof-of-stake
-            if self.nonce == 0 : 
-                self.select_candidate()
-            else :
-                #ask bootstrap node for the validator
-                endpoint = "request_validator"
-                address = 'http://' + self.bootstrap_addr +':'+ self.bootstrap_port + endpoint
-                response = requests.get(address) # apo to response pairnoyme ton validator.
-                validator = response 
-                self.current_block = block.Block(self.current_block.capacity,self.current_block.index,self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
-                if self.nonce == validator : 
-                    self.validate_block()
-                    self.broadcast_block()
+            #all the nodes execute proof-of-stake 
+            validator = self.select_candidate()
+            if self.nonce == validator : 
+                self.broadcast_block(self.validate_block(self.current_block))
+            self.current_block = block.Block(self.current_block.capacity,self.current_block.index,self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
+            
                 
 
             
     def select_candidate(self) :
-        self.PoS_select.acquire()
-        self.validator = self.PoS()
-        self.PoS_select.release()
-        return 
+        validator = self.PoS()
+        return validator
     
 
     def Pos() :
         return
-    #def validate_transaction(): #use of signature and BCCs balance
+    def validate_transaction(): #use of signature and BCCs balance
+        
 
     #def add_transaction_to_block(): #if enough transactions mine
 
