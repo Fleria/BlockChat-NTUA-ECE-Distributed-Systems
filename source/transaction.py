@@ -10,21 +10,23 @@ import json
 
 class Transaction:
     def _init_(self, sender_address, nonce, recipient_address, recipient_port, type, value, message, sender_private_key):
-        self.transaction_id=None#to hash tou transaction
+        self.transaction_id = None #to hash tou transaction
         self.signature = None #me to private key tou sender
         self.sender_address = sender_address #to public key tou wallet apo to opoio proerxontai ta xrimata
         self.recipient_address = recipient_address #public key 
-        self.type = type
-        self.nonce=nonce
-        if self.sender_address==0:
+        self.type = None
+        self.nonce = 0
+        if self.sender_address==0: #stake
+            self.type = 2 
             self.amount=value
         else :
-            if (type==0): #coin transaction
+            if (message == ''): #coin transaction
+                self.type = 0
                 self.amount = value +  value*0.03
             else: #message transaction
+                self.type = 1
                 self.amount = len(message)
         
-
     def to_dict(self):
         dict = {
             "sender_address": self.sender_address,
@@ -38,7 +40,6 @@ class Transaction:
 
     def sign_transaction(self, private_key): #me private key
         key = RSA.importKey(private_key)
-        #hash = SHA256.new(self.id.encode('utf-8'))
         signature = PKCS1_v1_5.new(key).sign(self.transaction_id)   
         result = base64.b64encode(signature).decode()
         self.signature = result
@@ -47,8 +48,7 @@ class Transaction:
     def verify_signature(self):
         public_key = RSA.import_key(self.sender_address)
         signature = base64.b64decode(self.signature)
-        #h = SHA256.new(self.transaction_id.encode('utf-8'))
-        h=self.hashTransaction()
+        h = self.transaction_id
         verifier = PKCS1_v1_5.new(public_key)
         if verifier.verify(h, signature):   #mallon
             print("Transaction signature is valid")
@@ -56,9 +56,8 @@ class Transaction:
         else:
             print("Transaction signature is not valid")
             verify = False
-        return verify
+        return verify #0 or 1
         
-
     def hashTransaction(self):
         hash_message = self.to_dict()
         block_dump = json.dumps(hash_message.__str__()) #to kanoume json

@@ -7,7 +7,6 @@ class Wallet:
         self.public_key = key.publickey().exportKey().decode("ISO-8859-1")
         self.address = self.public_key
         self.unspent = 1000 #change later
-        self.nonce=0
         self.transactions = []
 
 #instance = Wallet()
