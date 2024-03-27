@@ -17,7 +17,7 @@ class node:
         self.nonce = 0
         self.id = 0
         self.wallet = self.generate_wallet()
-        self.ring = {self.wallet.address : [0, ip, port, self.BCC,0]} #store information for every node(id, adrdress (ip:port), public key, balance)
+        self.ring = {self.wallet.address : [0, ip, port, self.BCC,0]} #store information for every node(id, adrdress (ip, port), balance, stake)
         self.current_block = None
         self.blockchain = blockchain.Blockchain()
         self.PoS_select = Lock()
