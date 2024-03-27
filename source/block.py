@@ -27,7 +27,7 @@ class Block:
         self.current_hash = hash
         return hash
     
-    def check_and_add_transaction(self,transaction):
+    def check_and_add_transaction_to_block(self,transaction):
         self.transactions_list.append(transaction)
         if self.capacity < len(self.transactions_list):
             return True

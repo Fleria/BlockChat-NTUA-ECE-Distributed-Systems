@@ -12,6 +12,9 @@ import requests
 from threading import Lock
 
 class node:
+    """
+    Implementation for each of the 5 nodes of the system.
+    """
     def _init_(self,ip,port):
         self.BCC = 100
         self.nonce = 0
@@ -26,48 +29,63 @@ class node:
         self.bootstrap_port = None
         self.stake = 0
 
-    def generate_wallet(): #create a wallet for this node, with a public key and a private key. returns the Wallet class
-        return wallet.Wallet() #prepei kapos na stelnoume piso to public key
+    def generate_wallet(): 
+        """
+        Creates a wallet for this node, with a public and a private key. 
+        """
+        return wallet.Wallet()
     
-    def create_transaction(self, receiver_ad, receiver_port, amount , message): #remember to broadcast it
+    def create_transaction(self, receiver_ad, receiver_port, amount, message):
+        """
+        Creates a transaction object and initialises it, then broadcasts it.
+        """
         trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_ad, receiver_port, amount, message, self.wallet.private_key)
         self.nonce += 1
-        trans.nonce = self.nonce #to nonce tis sinallagis einai to nonce tou node
+        trans.nonce = self.nonce #transaction nonce is current node nonce
         trans.hashTransaction()
-        trans.sign_transaction()
-        # self.validate_transaction()
-        # self.add_transaction(trans)
+        trans.sign_transaction(self.wallet.private_key)
         self.broadcast_transaction(trans)
                     
-    def validate_transaction(self, transaction): #use of signature and BCCs balance, change
-        if(transaction.verify_signature() == True):
+    def validate_transaction(self, transaction): 
+        """
+        Checks to verify the signature of the transaction and the balance of the wallet. 
+        If verified, validates the transaction.
+        """
+        if (transaction.verify_signature() == True):
             print("Signature verified")
             if (self.wallet.unspent >= transaction.amount):
                 print("Balance is enough")
                 return True
         else:
-            print("transaction couldn't be validated")
+            print("Transaction couldn't be validated")
             return False
     
     def broadcast_transaction(self,transaction):
+        """
+        Broadcasts the transaction to every registered node in the ring.
+        If the transaction is validated by the node, it gets added to the transaction list.
+        """
         endpoint='/validate_transaction'
         for node in self.ring :
             address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-            response = requests.post(address, transaction.to_dict())#prepei na broume pos na steiloyme to transaction
-            #if response.status_code == 'correct' :#prepei na orisoume to correct. Giati ginetai prota validate kai meta add_to_block.
+            response = requests.post(address, transaction.to_dict())
+            #if response.status_code == 'correct': #prepei na orisoume to correct
             if (self.validate_transaction(transaction) == True):
-                return True
+                self.add_transaction(transaction)
             else :
-                return False 
-        if transaction.recipient_address == 0 : #stake change transaction
-            self.ring[transaction.sender_address][3]+=self.ring[transaction.sender_address][4]
-            self.ring[transaction.sender_address][4]=transaction.amount
+                print("Transaction couldn't be validated")
+        """
+        adam theoro auto to kommati prepei na to valoume sto add_transaction alla to afino kai edo
+        """
+        if transaction.type == 2 : #stake transaction
+            self.ring[transaction.sender_address][3] += self.ring[transaction.sender_address][4]
+            self.ring[transaction.sender_address][4] = transaction.amount
         else :
             endpoint='/receive_transaction'
             for node in self.ring :
                 address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-                response = requests.post(address,transaction)#prepei na broume pos na steiloyme to transaction
-                if response.status_code == 'correct' :#prepei na orisoume to correct. Giati ginetai prota validate kai meta add_to_block.
+                response = requests.post(address,transaction)
+                if response.status_code == 'correct':
                     return
 
     def mint_block():
@@ -92,22 +110,33 @@ class node:
     # def create_new_block(self):
     #     self.current_block=block.Block(self.current_block.current_hash)
 
-    def add_transaction(self, transaction): #adds transaction to block, returns false if block is full
+    def add_transaction(self, transaction): 
+        """
+        Adds the transaction to the block. 
+        If the current node is either the sender or the receiver, 
+        the transaction is appended to the node's list of transactions.
+        Balances the wallets accordingly.
+        Checks if current block is full after adding the transaction.
+        """
         if transaction.sender_address == self.wallet.address or transaction.receipient_address == self.wallet.address :
             self.wallet.transactions.append(transaction)
 
-        self.ring[transaction.sender_address][3] -= transaction.amount
-        if transaction.type == 0 :
+        self.ring[transaction.sender_address][3] -= transaction.amount #subtract the amount from sender, no matter the transaction type
+        
+        if (transaction.type == 0 or transaction.type == 1): #coin or message
             self.ring[transaction.receipient_address][3] += transaction.amount
 
-        if self.current_block.check_and_add_transaction(transaction) :
+        if (transaction.type == 2): #stake
+            self.ring[transaction.sender_address][4] = transaction.amount
+
+        if (self.current_block.check_and_add_transaction_to_block(transaction) == True): #if current block isn't at capacity
             return True
-        else :
-            #all the nodes execute proof-of-stake 
+        
+        else: #if current block is at capacity, execute proof of stake and create new block
             validator = self.select_candidate()
             if self.id == validator : 
                 self.broadcast_block(self.validate_block(self.current_block))
-            self.current_block = block.Block(self.current_block.capacity,self.current_block.index,self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
+            self.current_block = block.Block(self.current_block.capacity, self.current_block.index, self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
                    
     def select_candidate(self) :
         validator = self.PoS()
