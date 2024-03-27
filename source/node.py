@@ -15,6 +15,7 @@ class node:
     def _init_(self,ip,port):
         self.BCC = 100
         self.nonce = 0
+        self.id = 0
         self.wallet = self.generate_wallet()
         self.ring = {self.wallet.address : [0, ip, port, self.BCC,0]} #store information for every node(id, adrdress (ip:port), public key, balance)
         self.current_block = None
@@ -34,12 +35,12 @@ class node:
         trans.nonce = self.nonce #to nonce tis sinallagis einai to nonce tou node
         trans.hashTransaction()
         trans.sign_transaction()
-        self.validate_transaction()
-        self.add_transaction(trans)
+        # self.validate_transaction()
+        # self.add_transaction(trans)
         self.broadcast_transaction(trans)
                     
     def validate_transaction(self, transaction): #use of signature and BCCs balance, change
-        if(transaction.verify_signature == True):
+        if(transaction.verify_signature() == True):
             print("Signature verified")
             if (self.wallet.unspent >= transaction.amount):
                 print("Balance is enough")
@@ -52,13 +53,13 @@ class node:
         endpoint='/validate_transaction'
         for node in self.ring :
             address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-            response = requests.post(address, transaction)#prepei na broume pos na steiloyme to transaction
+            response = requests.post(address, transaction.to_dict())#prepei na broume pos na steiloyme to transaction
             #if response.status_code == 'correct' :#prepei na orisoume to correct. Giati ginetai prota validate kai meta add_to_block.
-            if (validate_transaction(transaction) == True):
+            if (self.validate_transaction(transaction) == True):
                 return True
             else :
-                return False
-        if transaction.recipient_address == 0 :
+                return False 
+        if transaction.recipient_address == 0 : #stake change transaction
             self.ring[transaction.sender_address][3]+=self.ring[transaction.sender_address][4]
             self.ring[transaction.sender_address][4]=transaction.amount
         else :
@@ -77,7 +78,7 @@ class node:
         return
 
     def validate_block(self):
-        self.current_block.myHash()
+        self.current_block.current_hash = self.current_block.myHash()
 
     def validate_chain():
         return
@@ -88,8 +89,8 @@ class node:
     def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap
         self.ring[public_key] = [id, ip, port, balance]
 
-    def create_new_block(self):
-        self.current_block=block.Block(self.current_block.current_hash)
+    # def create_new_block(self):
+    #     self.current_block=block.Block(self.current_block.current_hash)
 
     def add_transaction(self, transaction): #adds transaction to block, returns false if block is full
         if transaction.sender_address == self.wallet.address or transaction.receipient_address == self.wallet.address :
@@ -104,7 +105,7 @@ class node:
         else :
             #all the nodes execute proof-of-stake 
             validator = self.select_candidate()
-            if self.nonce == validator : 
+            if self.id == validator : 
                 self.broadcast_block(self.validate_block(self.current_block))
             self.current_block = block.Block(self.current_block.capacity,self.current_block.index,self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
                    
