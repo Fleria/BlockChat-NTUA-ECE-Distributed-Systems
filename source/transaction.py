@@ -19,13 +19,15 @@ class Transaction:
         self.recipient_address = recipient_address # recipient public key 
         self.type = None #type 0: coin, type 1: message, type 2: stake
         self.nonce = 0
+        self.fees = 0
         if self.sender_address==0: #stake
             self.type = 2 
             self.amount = value
         else :
             if (message == ''): #coin transaction
                 self.type = 0
-                self.amount = value +  value*0.03
+                self.amount = value 
+                self.fees = value*0.03
             else: #message transaction
                 self.message = message
                 self.type = 1

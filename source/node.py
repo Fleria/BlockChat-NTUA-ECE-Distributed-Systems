@@ -29,6 +29,7 @@ class node:
         self.bootstrap_addr = None
         self.bootstrap_port = None
         self.stake = 0
+        self.message_fees = 0
 
     def generate_wallet(): 
         """
@@ -89,7 +90,13 @@ class node:
             response = requests.post(address, transaction.to_dict())
         return
 
-    def validate_block(self):
+    def validate_block(self): #adam prepei na to ftiaksoume
+        """
+        Αυτή η συνάρτηση καλείται από τους nodes κατά τη λήψη ενός νέου block (εκτός του genesis block).
+        Επαληθεύεται ότι (a) ο validator είναι πράγματι ο σωστός (αυτός που υπέδειξε η κλήση της
+        ψευδοτυχαίας γεννήτριας) και ότι (b) το πεδίο previous_hash ισούται πράγματι με το hash του
+        προηγούμενου block.
+        """
         return self.current_block.myHash()
 
     def validate_chain():
@@ -115,13 +122,14 @@ class node:
         if transaction.sender_address == self.wallet.address or transaction.receipient_address == self.wallet.address :
             self.wallet.transactions.append(transaction)
 
-        self.ring[transaction.sender_address][3] -= transaction.amount #subtract the amount from sender, no matter the transaction type
+        self.ring[transaction.sender_address][3] -= (transaction.amount + transaction.fees) #subtract the amount from sender, no matter the transaction type
         
-        if transaction.type == 0: #coin or message
+        if transaction.type == 0: #coin 
+            self.message_fees += transaction.fees
             self.ring[transaction.receipient_address][3] += transaction.amount
 
-        if transaction.type == 1 : 
-            if transaction.receipient_address == self.wallet.address :
+        if transaction.type == 1: #message 
+            if transaction.receipient_address == self.wallet.address:
                 self.wallet.messages.append(transaction.message)
 
         if (transaction.type == 2): #stake
@@ -133,6 +141,10 @@ class node:
             validator = self.select_validator()
             if self.id == validator : 
                 self.broadcast_block(self.validate_block(self.current_block))
+            else: 
+                for node in self.ring: #adam evala na karatei kathe node ta sinolika fees tou kai na ta prosthetei edo sto wallet tou validator
+                    validator[0].wallet.unspent += node.message_fees
+            
             self.current_block = block.Block(self.current_block.capacity, self.current_block.index, self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
                    
     def select_validator(self):
@@ -158,11 +170,18 @@ class node:
         #     response = requests.get(address)
         return
     
-    def view():
-        #for cli
+    def view_block():
+        return
 
     def balance():
-        #for cli
+        endpoint='/balance'
+        address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
+        response = requests.get(address)
+        print('Node balance:', response.text)
+        return response
 
     def send_trans():
-        #for cli
+        return
+    
+    def mint_block(): #adam
+        return 
