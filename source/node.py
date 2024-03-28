@@ -70,34 +70,27 @@ class node:
         for node in self.ring :
             address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
             response = requests.post(address, transaction.to_dict())
-            #if response.status_code == 'correct': #prepei na orisoume to correct
-            if (self.validate_transaction(transaction) == True):
-                self.add_transaction(transaction)
+            if response.status_code == 'correct': #prepei na orisoume to correct
+                endpoint='/receive_transaction'
+                for node in self.ring :
+                    address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
+                    response = requests.post(address,transaction)
+                    if response.status_code == 'correct':
+                        return
+            # if (self.validate_transaction(transaction) == True):
+            #     self.add_transaction(transaction)
             else :
                 print("Transaction couldn't be validated")
-        """
-        adam theoro auto to kommati prepei na to valoume sto add_transaction alla to afino kai edo
-        """
-        if transaction.type == 2 : #stake transaction
-            self.ring[transaction.sender_address][3] += self.ring[transaction.sender_address][4]
-            self.ring[transaction.sender_address][4] = transaction.amount
-        else :
-            endpoint='/receive_transaction'
-            for node in self.ring :
-                address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-                response = requests.post(address,transaction)
-                if response.status_code == 'correct':
-                    return
-
-    def mint_block():
-        #ilopoiei to proof of stake kalontas tin gennitria. if called by validator, gemizei ta pedia tou block me tis plirofories
-        return
     
-    def broadcast_block():
+    def broadcast_block(self,hash):
+        endpoint='/valid_block'
+        for node in self.ring :
+            address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
+            response = requests.post(address, transaction.to_dict())
         return
 
     def validate_block(self):
-        self.current_block.current_hash = self.current_block.myHash()
+        return self.current_block.myHash()
 
     def validate_chain():
         return
@@ -124,13 +117,19 @@ class node:
 
         self.ring[transaction.sender_address][3] -= transaction.amount #subtract the amount from sender, no matter the transaction type
         
-        if (transaction.type == 0 or transaction.type == 1): #coin or message
+        if transaction.type == 0: #coin or message
             self.ring[transaction.receipient_address][3] += transaction.amount
 
+        if transaction.type == 1 : 
+            if transaction.receipient_address == self.wallet.address :
+                self.wallet.messages.append(transaction.message)
+
         if (transaction.type == 2): #stake
+            self.ring[transaction.sender_address][3] += self.ring[transaction.sender_address][4]
             self.ring[transaction.sender_address][4] = transaction.amount
 
         if (self.current_block.check_and_add_transaction_to_block(transaction) == False): #if current block is at capacity, execute proof of stake and create new block
+            self.blockchain.add_to_blockchain(self.current_block)
             validator = self.select_validator()
             if self.id == validator : 
                 self.broadcast_block(self.validate_block(self.current_block))
@@ -149,8 +148,12 @@ class node:
         for node in self.ring:
             current += node[4]
             if current >= threshold:
-                validator = node
+                validator = node[0]
         return validator
     
-    def Pos(self):
+    def PoS(self):
+        # endpoint='/lottery'
+        # for node in self.ring :
+        #     address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
+        #     response = requests.get(address)
         return

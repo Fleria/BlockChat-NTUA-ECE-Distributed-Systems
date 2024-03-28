@@ -27,6 +27,7 @@ class Transaction:
                 self.type = 0
                 self.amount = value +  value*0.03
             else: #message transaction
+                self.message = message
                 self.type = 1
                 self.amount = len(message)
         

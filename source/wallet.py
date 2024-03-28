@@ -11,3 +11,4 @@ class Wallet:
         self.address = self.public_key
         self.unspent = 1000 #change later
         self.transactions = []
+        self.messages = []
