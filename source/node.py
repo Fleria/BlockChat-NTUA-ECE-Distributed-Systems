@@ -157,3 +157,12 @@ class node:
         #     address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
         #     response = requests.get(address)
         return
+    
+    def view():
+        #for cli
+
+    def balance():
+        #for cli
+
+    def send_trans():
+        #for cli
