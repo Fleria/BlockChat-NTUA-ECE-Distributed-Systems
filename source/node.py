@@ -10,6 +10,7 @@ from Crypto.Signature import PKCS1_v1_5
 import base64
 import requests
 from threading import Lock
+import random
 
 class node:
     """
@@ -104,7 +105,7 @@ class node:
     def stake(self,amount): 
         self.create_transaction(0,0,amount,None)
 
-    def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap
+    def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
         self.ring[public_key] = [id, ip, port, balance]
 
     # def create_new_block(self):
@@ -129,18 +130,27 @@ class node:
         if (transaction.type == 2): #stake
             self.ring[transaction.sender_address][4] = transaction.amount
 
-        if (self.current_block.check_and_add_transaction_to_block(transaction) == True): #if current block isn't at capacity
-            return True
-        
-        else: #if current block is at capacity, execute proof of stake and create new block
-            validator = self.select_candidate()
+        if (self.current_block.check_and_add_transaction_to_block(transaction) == False): #if current block is at capacity, execute proof of stake and create new block
+            validator = self.select_validator()
             if self.id == validator : 
                 self.broadcast_block(self.validate_block(self.current_block))
             self.current_block = block.Block(self.current_block.capacity, self.current_block.index, self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
                    
-    def select_candidate(self) :
-        validator = self.PoS()
+    def select_validator(self):
+        """
+        Selects a validator for the execution of the Proof-of-Stake algorithm.
+        Creates sum of stakes by each node and randomly chooses a treshold.
+        Checks if each node's stakes reach the threshold and, if not,
+        adds the next node's stakes and tries again.
+        """
+        total_stakes = sum(amount[4] for amount in self.ring.values())
+        threshold = random.uniform(0, total_stakes)
+        current = 0
+        for node in self.ring:
+            current += node[4]
+            if current >= threshold:
+                validator = node
         return validator
     
-    def Pos() :
+    def Pos(self):
         return
