@@ -12,13 +12,13 @@ class Transaction:
     """
     Implementation for a transaction between two nodes.
     """
-    def _init_(self, sender_address, nonce, recipient_address, recipient_port, type, value, message, sender_private_key):
+    def _init_(self, sender_address, nonce, reciever_address,  value, message, type=None):
         self.transaction_id = None #transaction hash
         self.signature = None 
         self.sender_address = sender_address #sender public key
-        self.recipient_address = recipient_address # recipient public key 
-        self.type = None #type 0: coin, type 1: message, type 2: stake
-        self.nonce = 0
+        self.reciever_address=reciever_address # recipient public key 
+        self.type = type #type 0: coin, type 1: message, type 2: stake
+        self.nonce = nonce
         self.fees = 0
         if self.sender_address==0: #stake
             self.type = 2 
@@ -36,8 +36,10 @@ class Transaction:
     def to_dict(self):
         dict = {
             "sender_address": self.sender_address,
-            "receiver_address": self.recipient_address,
+            "receiver_address": self.reciever_address,
             "amount" : self.amount,
+            "message" : self.message,
+            "type": self.type,
             "transaction_id" : self.transaction_id,
             "signature" : self.signature,
             "nonce" : self.nonce

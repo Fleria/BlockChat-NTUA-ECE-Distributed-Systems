@@ -12,7 +12,7 @@ import requests
 from threading import Lock
 import random
 
-class node:
+class Node:
     """
     Implementation for each of the 5 nodes of the system.
     """
@@ -31,17 +31,21 @@ class node:
         self.stake = 0
         self.message_fees = 0
 
+    def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
+
+        self.ring[public_key] = [id, ip, port, balance]
+
     def generate_wallet(): 
         """
         Creates a wallet for this node, with a public and a private key. 
         """
         return wallet.Wallet()
     
-    def create_transaction(self, receiver_ad, receiver_port, amount, message):
+    def create_transaction(self, receiver_address, amount, message):
         """
         Creates a transaction object and initialises it, then broadcasts it.
         """
-        trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_ad, receiver_port, amount, message, self.wallet.private_key)
+        trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_address, amount, message, self.wallet.private_key)
         self.nonce += 1
         trans.nonce = self.nonce #transaction nonce is current node nonce
         trans.hashTransaction()
@@ -70,13 +74,12 @@ class node:
         endpoint='/validate_transaction'
         for node in self.ring :
             address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-            response = requests.post(address, transaction.to_dict())
-            if response.status_code == 'correct': #prepei na orisoume to correct
+            response = requests.post(address, data=transaction.to_dict())
+            if response.status_code == 200: #prepei na orisoume to correct
                 endpoint='/receive_transaction'
-                for node in self.ring :
-                    address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-                    response = requests.post(address,transaction)
-                    if response.status_code == 'correct':
+                address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
+                response = requests.post(address,data=transaction.to_dict())
+                if response.status_code == 'correct':
                         return
             # if (self.validate_transaction(transaction) == True):
             #     self.add_transaction(transaction)
@@ -104,9 +107,6 @@ class node:
 
     def stake(self,amount): 
         self.create_transaction(0,0,amount,None)
-
-    def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
-        self.ring[public_key] = [id, ip, port, balance]
 
     # def create_new_block(self):
     #     self.current_block=block.Block(self.current_block.current_hash)
