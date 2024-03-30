@@ -122,15 +122,16 @@ class Node:
         if transaction.sender_address == self.wallet.address or transaction.receipient_address == self.wallet.address :
             self.wallet.transactions.append(transaction)
 
-        self.ring[transaction.sender_address][3] -= (transaction.amount + transaction.fees) #subtract the amount from sender, no matter the transaction type
+        self.ring[transaction.sender_address][3] -= (transaction.amount) #subtract the amount from sender, no matter the transaction type
         
         if transaction.type == 0: #coin 
-            self.message_fees += transaction.fees
+            self.current_block.fees += transaction.fees
             self.ring[transaction.receipient_address][3] += transaction.amount
 
         if transaction.type == 1: #message 
             if transaction.receipient_address == self.wallet.address:
                 self.wallet.messages.append(transaction.message)
+                self.current_block.fees += transaction.fees
 
         if (transaction.type == 2): #stake
             self.ring[transaction.sender_address][3] += self.ring[transaction.sender_address][4]
@@ -142,8 +143,8 @@ class Node:
             if self.id == validator : 
                 self.broadcast_block(self.validate_block(self.current_block))
             else: 
-                for node in self.ring: #adam evala na karatei kathe node ta sinolika fees tou kai na ta prosthetei edo sto wallet tou validator
-                    validator[0].wallet.unspent += node.message_fees
+                #adam den eimai sigouri oti to current_block einai sosto etsi
+                validator[0].wallet.unspent += self.current_block.fees
             
             self.current_block = block.Block(self.current_block.capacity, self.current_block.index, self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
                    

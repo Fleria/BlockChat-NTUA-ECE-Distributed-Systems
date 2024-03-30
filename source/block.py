@@ -14,6 +14,7 @@ class Block:
         self.transactions_list = []
         self.capacity = capacity
         self.current_hash = None
+        self.fees = 0
 
     def myHash(self): 
         """

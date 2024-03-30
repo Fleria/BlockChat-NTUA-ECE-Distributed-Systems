@@ -26,12 +26,13 @@ class Transaction:
         else :
             if (message == ''): #coin transaction
                 self.type = 0
-                self.amount = value 
                 self.fees = value*0.03
+                self.amount = value + self.fees
             else: #message transaction
                 self.message = message
                 self.type = 1
                 self.amount = len(message)
+                self.fees = self.amount
         
     def to_dict(self):
         dict = {

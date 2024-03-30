@@ -2,24 +2,24 @@ import sys
 import node
 
 """
-t <recipient_address> <message>
+-t <recipient_address> <message>
 New transaction: Στείλε στο recipient_address wallet το ποσό amount από BTC coins που θα πάρει
 από το wallet sender_address. Θα καλεί συνάρτηση create_transaction στο backend που θα
 υλοποιεί την παραπάνω λειτουργία.
-t <recipient_address> <message>
+-t <recipient_address> <message>
 New message: Στείλε στο recipient_address wallet το μήνυμα message χρεώνοντας κατάλληλα το
 wallet του αποστολέα. Θα καλεί συνάρτηση create_transaction στο backend που θα
 υλοποιεί την παραπάνω λειτουργία.
-stake <amount>
+-stake <amount>
 Set the node stake: Δέσμευσε amount ποσό για staking του συγκεκριμένου κόμβου. Καλεί την
 stake(amount)όπως ορίστηκε παραπάνω.
-view
+-view
 View last block: Τύπωσε τα transactions που περιέχονται στο τελευταίο επικυρωμένο block του
 BlockChat blockchain καθώς και το id του validator του block αυτού. Καλεί τη συνάρτηση
 view_block() στο backend που υλοποιεί την παραπάνω λειτουργία.
-balance
+-balance
 Show balance: Τύπωσε το υπόλοιπο του wallet.
-help
+-help
 Επεξήγηση των παραπάνω εντολών.
 """
 
