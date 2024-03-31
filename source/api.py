@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from Flask import Blueprint, jsonify, request
 import node
 import transaction
 import requests
@@ -38,3 +38,37 @@ def receive_transaction() :
     trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["amount"],request.form["message"],request.form["type"])
     my_node.add_transaction(trans)
     return jsonify(status=200)
+
+@rest_api.route('/receive_valid_block',methods=['POST'])
+def valid_block():
+    prev_hash=request.form['hash']
+    my_node.blockchain.add_hash(prev_hash)
+    return jsonify(status=200)
+
+@rest_api.route('/balance')
+def balance():
+    bal=my_node.balance()
+    return jsonify({'balance':bal},status=200)
+
+@rest_api.route('/send_transaction',methods=['POST'])
+def send_transaction():
+    id = request.form['id']
+    if request.form.get('message') :
+        my_node.create_transaction(id,0,request.form['message'])
+    elif request.form.get('amount') :
+        my_node.create_transaction(id,request.form['amount'],'')
+    else :
+        my_node.stake(request.form.get['stake'])
+    return jsonify(status=200)
+
+@rest_api.route('/view_block',methods=['GET'] )
+def view_block():
+    counter = 0
+    block = {}
+    for transaction in my_node.blockchain[-1].transaction_list :
+        block[str(counter)] = transaction.to_dict()
+        counter+=1
+    return jsonify(block,status=200)
+
+
+

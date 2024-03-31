@@ -87,10 +87,10 @@ class Node:
                 print("Transaction couldn't be validated")
     
     def broadcast_block(self,hash):
-        endpoint='/valid_block'
+        endpoint='/receive_valid_block'
         for node in self.ring :
             address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-            response = requests.post(address, transaction.to_dict())
+            response = requests.post(address,data={'hash':hash})
         return
 
     def validate_block(self): #adam prepei na to ftiaksoume
@@ -174,13 +174,9 @@ class Node:
     def view_block():
         return
 
-    def balance():
-        endpoint='/balance'
-        address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-        response = requests.get(address)
-        print('Node balance:', response.text)
-        return response
-
+    def balance(self):
+        return self.BCC
+    
     def send_trans():
         return
     

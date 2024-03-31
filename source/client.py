@@ -1,6 +1,9 @@
 import sys
 import node
+import requests
 
+my_ip = None
+my_port= None
 """
 -t <recipient_address> <message>
 New transaction: Στείλε στο recipient_address wallet το ποσό amount από BTC coins που θα πάρει
@@ -27,7 +30,7 @@ print("Enter command or enter <help> to view list of possible commands \n")
 
 help_string = '''
 Your options are: \n
-t <recipient_address> <message>: create a new transaction from your wallet to <recipient_address>'s wallet. 
+t <type> <recipient_address> <message>: create a new transaction from your wallet to <recipient_address>'s wallet. 
 If you wish to make a coin transaction, leave <message> empty. \n
 stake <amount>: set your stake amount \n
 view: print out the transactions of the last validated block of BlockChat and its validator id. \n
@@ -39,21 +42,39 @@ while (1):
     words = action.split()
     
     if (words[0] == 't'):
-        id = words[1]
-        message = words[2]
-        node.send_trans(id, message)
+        type=words[1]
+        id = words[2]
+        message = words[3]
+        endpoint='/send_transaction'
+        address = 'http://' + my_ip +':'+ my_port + endpoint
+        if type == 'c':
+            response = requests.post(address,data={'id':id,'amount':message})
+        if type == 'm' : 
+            response = requests.post(address,data={'id':id,'message':message})
+        print('')
     
     if (words[0] == 'stake'):
         stake = words[1]
-        node.send_trans(id, '')
+        endpoint='/send_transaction'
+        address = 'http://' + my_ip +':'+ my_port + endpoint
+        repose=requests.post(address,{'stake':stake})
         #call stake_amount
 
     if (words[0] == 'view'):
-        node.view()
+        endpoint='/view_block'
+        address = 'http://' + my_ip +':'+ my_port + endpoint
+        reponse = requests.get(address)
+        print(response.content)
+        
         #call view_block
     
     if (words[0] == 'balance'):
-        node.balance()
+        endpoint='/balance'
+        address = 'http://' + my_ip +':'+ my_port + endpoint
+        response = requests.get(address)
+        data=response.json()
+        print('Node balance:', data['balance'])
+
     
     if (words[0] == 'help'):
         print(help_string)
