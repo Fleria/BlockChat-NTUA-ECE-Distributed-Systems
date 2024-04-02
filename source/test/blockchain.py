@@ -14,7 +14,3 @@ class Blockchain:
         """
         self.blocks_of_blockchain.append(block)
         self.length += 1 
-
-    def add_hash(self,hash):
-        self.blocks_of_blockchain[-1].previous_hash=hash
-        return
