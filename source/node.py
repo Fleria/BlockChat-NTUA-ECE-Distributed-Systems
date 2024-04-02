@@ -17,7 +17,7 @@ class Node:
     Implementation for each of the 5 nodes of the system.
     """
     def _init_(self,ip,port):
-        self.BCC = 100
+        self.BCC = 1000
         self.nonce = 0
         self.id = 0
         self.wallet = self.generate_wallet()

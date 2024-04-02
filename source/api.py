@@ -16,11 +16,11 @@ def register_to_ring() :
     address = request.form["address"]
     port = request.form["port"]
     id = len(my_node.ring)
-    my_node.register_node_to_ring(id,address,port,key)
+    my_node.register_node_to_ring(id,address,port,key,1000)
 
     if id == total_nodes :
         for node in my_node.ring :
-            url="http://"+ address + ':'+port +'/share_ring'
+            url="http://"+ node[1] + ':'+node[2] +'/share_ring'
             response = requests.post(url, data = my_node.ring)
             if(response.status_code == 200) :
                 print("successful ring sharing for node ", id)
