@@ -30,6 +30,7 @@ class Node:
         self.bootstrap_port = None
         self.stake = 0
         self.message_fees = 0
+        self.ring2 = {'my_node_key' : [0, '127.0.0.1', '5000', self.BCC, 0]}
 
     def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
 
@@ -90,25 +91,30 @@ class Node:
         #         print("Transaction couldn't be validated")
         address= 'http://localhost:5000'+endpoint
         response = requests.post(address, data=transaction.to_dict())
-        if response.status_code == 200: #prepei na orisoume to correct
+        if response.status_code == 200:
             endpoint='/receive_transaction'
             address= 'http://localhost:5000'+endpoint
             response = requests.post(address,data=transaction.to_dict())
             if response.status_code == 200:
                     print(" successfully broadcast")
-        # if (self.validate_transaction(transaction) == True):
-        #     self.add_transaction(transaction)
+        if (transaction.verify_signature()):
+             print("transaction added successfully to current block " + str(self.current_block)+ ", id is" + str(transaction.transaction_id)) #testing
+             self.add_transaction(transaction)
         else :
             print("Transaction couldn't be validated")
 
-    def broadcast_block(self,hash):
+    def broadcast_block(self, hash):
+        print("lalala")
         endpoint='/receive_valid_block'
-        for node in self.ring :
-            address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-            response = requests.post(address,data={'hash':hash})
+        print("lololo")
+        print(self.current_block.current_hash)
+        #for node in self.ring2 :
+            #address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
+        address= 'http://localhost:5000'+endpoint
+        response = requests.post(address,data={'hash':hash})
         return
 
-    def validate_block(self): #adam prepei na to ftiaksoume
+    def validate_block(self):
         """
         Αυτή η συνάρτηση καλείται από τους nodes κατά τη λήψη ενός νέου block (εκτός του genesis block).
         Επαληθεύεται ότι (a) ο validator είναι πράγματι ο σωστός (αυτός που υπέδειξε η κλήση της
@@ -134,34 +140,41 @@ class Node:
         Balances the wallets accordingly.
         Checks if current block is full after adding the transaction.
         """
-        if transaction.sender_address == self.wallet.address or transaction.receipient_address == self.wallet.address :
+        if transaction.sender_address == self.wallet.address or transaction.reciever_address == self.wallet.address :
             self.wallet.transactions.append(transaction)
 
         self.ring[transaction.sender_address][3] -= (transaction.amount) #subtract the amount from sender, no matter the transaction type
         
         if transaction.type == 0: #coin 
             self.current_block.fees += transaction.fees
-            self.ring[transaction.receipient_address][3] += transaction.amount
+            self.ring[transaction.reciever_address][3] += transaction.amount
+            print("coin transaction added") #testing
 
         if transaction.type == 1: #message 
-            if transaction.receipient_address == self.wallet.address:
+            if transaction.reciever_address == self.wallet.address:
                 self.wallet.messages.append(transaction.message)
                 self.current_block.fees += transaction.fees
+                print("message transaction added") #testing
 
         if (transaction.type == 2): #stake
             self.ring[transaction.sender_address][3] += self.ring[transaction.sender_address][4]
             self.ring[transaction.sender_address][4] = transaction.amount
+            print("stake transaction added") #testing
 
+        if (self.current_block.check_and_add_transaction_to_block(transaction) == True): #testing
+            return
+        
         if (self.current_block.check_and_add_transaction_to_block(transaction) == False): #if current block is at capacity, execute proof of stake and create new block
             self.blockchain.add_to_blockchain(self.current_block)
             validator = self.select_validator()
             if self.id == validator : 
-                self.broadcast_block(self.validate_block(self.current_block))
+                print("I am the validator")
+                #self.broadcast_block(self.current_block.current_hash) 
+                self.broadcast_block(self.current_block.capacity) #testing here now
             else: 
-                #adam den eimai sigouri oti to current_block einai sosto etsi
                 validator[0].wallet.unspent += self.current_block.fees
             
-            self.current_block = block.Block(self.current_block.capacity, self.current_block.index, self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
+            self.current_block = block.Block(self.current_block.index, self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
                    
     def select_validator(self):
         """
@@ -170,11 +183,12 @@ class Node:
         Checks if each node's stakes reach the threshold and, if not,
         adds the next node's stakes and tries again.
         """
-        total_stakes = sum(amount[4] for amount in self.ring.values())
+        total_stakes = sum(amount[4] for amount in self.ring2.values())
         threshold = random.uniform(0, total_stakes)
         current = 0
-        for node in self.ring:
-            current += node[4]
+        for node in self.ring2.values():
+            node_index = int(node[4])
+            current += node_index
             if current >= threshold:
                 validator = node[0]
         return validator
@@ -185,9 +199,9 @@ class Node:
         #     address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
         #     response = requests.get(address)
         return
-    
-    def view_block():
-        return
+      
+    def view_block(self, block):
+        return block.to_dict()
 
     def balance(self):
         return self.BCC

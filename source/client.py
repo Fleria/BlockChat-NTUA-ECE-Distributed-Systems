@@ -3,7 +3,8 @@ import node
 import requests
 
 my_ip = None
-my_port= None
+my_port = None
+
 """
 -t <recipient_address> <message>
 New transaction: Στείλε στο recipient_address wallet το ποσό amount από BTC coins που θα πάρει

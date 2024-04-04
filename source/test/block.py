@@ -13,9 +13,16 @@ class Block:
         self.validator = validator
         self.index = index 
         self.transactions_list = []
-        self.capacity = 100
+        self.capacity = 1
         self.current_hash = None
         self.fees = 0
+
+    def to_dict(self):
+        dict = {
+            "validator" : self.validator,
+            "transactions_list": self.transactions_list
+        }
+        return dict  
 
     def myHash(self): 
         """
@@ -35,8 +42,9 @@ class Block:
         """
         Appends transaction to block, then checks if block reached capacity.
         """
-        self.transactions_list.append(transaction)
+        self.transactions_list.append(transaction) #tested
         if self.capacity > len(self.transactions_list):
+            print("NOT AT CAPACITY")
             return True
         else:
             print("Block is at capacity !!!")

@@ -1,9 +1,16 @@
 import sys
-import node
 import requests
+from colorama import init, Fore
+import json
 
-my_ip = None
-my_port= None
+my_ip = 'localhost'
+my_port= '5000'
+
+init()
+COLOR_SUCCESS = Fore.GREEN
+COLOR_ERROR = Fore.RED
+COLOR_RESET = Fore.RESET
+
 """
 -t <recipient_address> <message>
 New transaction: Στείλε στο recipient_address wallet το ποσό amount από BTC coins που θα πάρει
@@ -37,48 +44,57 @@ view: print out the transactions of the last validated block of BlockChat and it
 balance: print out your wallet balance. \n
 '''
 
-while (1):
-    action = input()
-    words = action.split()
-    
-    if (words[0] == 't'):
-        type=words[1]
-        id = words[2]
-        message = words[3]
-        endpoint='/send_transaction'
-        address = 'http://' + my_ip +':'+ my_port + endpoint
-        if type == 'c':
-            response = requests.post(address,data={'id':id,'amount':message})
-        if type == 'm' : 
-            response = requests.post(address,data={'id':id,'message':message})
-        print('')
-    
-    if (words[0] == 'stake'):
-        stake = words[1]
-        endpoint='/send_transaction'
-        address = 'http://' + my_ip +':'+ my_port + endpoint
-        repose=requests.post(address,{'stake':stake})
-        #call stake_amount
-
-    if (words[0] == 'view'):
-        endpoint='/view_block'
-        address = 'http://' + my_ip +':'+ my_port + endpoint
-        reponse = requests.get(address)
-        print(response.content)
+while True:
+    try:
+        action = input()
+        words = action.split()
         
-        #call view_block
+        if words[0] == 't':
+            type = words[1]
+            id = words[2]
+            message = words[3]
+            endpoint = '/send_transaction'
+            address = 'http://' + my_ip + ':' + my_port + endpoint
+            if type == 'c':
+                response = requests.post(address, data={'id': id, 'amount': message})
+            elif type == 'm':
+                response = requests.post(address, data={'id': id, 'message': message})
+            print("\n")
+        
+        elif words[0] == 'stake':
+            stake = words[1]
+            endpoint = '/send_transaction'
+            address = 'http://' + my_ip + ':' + my_port + endpoint
+            response = requests.post(address, {'stake': stake})
+        
+        elif words[0] == 'view':
+            endpoint = '/view_block'
+            address = 'http://' + my_ip + ':' + my_port + endpoint
+            response = requests.get(address)
+            response_data = response.json()
+            block_data = response_data['block']
+            block_validator = response_data['validator']
+            print("The block validator is:")
+            print(block_validator)
+            print("And the list of transactions for the block are:")
+            print(block_data)
+            print("\n")
+        
+        elif words[0] == 'balance':
+            endpoint = '/balance'
+            address = 'http://' + my_ip + ':' + my_port + endpoint
+            response = requests.get(address)
+            data = response.json()
+            print('Node balance:', data['balance'])
+            print("\n")
+        
+        elif words[0] == 'help':
+            print(help_string)
+        
+        elif words[0] == 'exit':
+            print("Goodbye")
+            sys.exit(0)
     
-    if (words[0] == 'balance'):
-        endpoint='/balance'
-        address = 'http://' + my_ip +':'+ my_port + endpoint
-        response = requests.get(address)
-        data=response.json()
-        print('Node balance:', data['balance'])
-
-    
-    if (words[0] == 'help'):
-        print(help_string)
-
-    if (words[0] == 'exit'):
+    except KeyboardInterrupt:
         print("Goodbye")
         sys.exit(0)
