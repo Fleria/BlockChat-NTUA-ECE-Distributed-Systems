@@ -52,7 +52,9 @@ if __name__ == '__main__':
         res = response.json()
         my_node.id=res['id']
         print("node registered with id ", my_node.id)
-        if 'ring' in res :print("aquired ring " , res['ring'])
+        if 'ring' in res : 
+            my_node.ring=res['ring']
+        print(my_node.ring)
         app.run(port=port)
         
 

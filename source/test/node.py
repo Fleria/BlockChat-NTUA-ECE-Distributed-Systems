@@ -44,17 +44,29 @@ class Node:
     #     """
     #     return wallet.Wallet()
     
-    def create_transaction(self, receiver_address, amount, message):
+    def create_transaction(self, receiver_id, amount=None, message=None):
         """
         Creates a transaction object and initialises it, then broadcasts it.
         """
-        trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_address, amount, message, self.wallet.private_key)
-        self.nonce += 1
-        trans.nonce = self.nonce #transaction nonce is current node nonce
+        print("receiver_id == " , receiver_id)
+        for key in self.ring :
+            print(key, "\n" , self.ring[key],self.ring[key][0])                      # kanoume transaction me node id kai 
+            if str(self.ring[key][0]) == receiver_id :   # briskoume to node public key edo
+                print(self.ring[key][0],receiver_id)
+                receiver_address=key    
+                print("the key we need is ", receiver_address)
+                trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_address, amount, message, self.wallet.private_key)
+                self.nonce += 1
+                trans.nonce = self.nonce
+                trans.sign_transaction(self.wallet.private_key)
+                self.broadcast_transaction(trans)
+                break
+             #
+         #transaction nonce is current node nonce
         #self.current_block.check_and_add_transaction_to_block(trans)
         # trans.hashTransaction()
-        trans.sign_transaction(self.wallet.private_key)
-        self.broadcast_transaction(trans)
+        # trans.sign_transaction(self.wallet.private_key)
+        # self.broadcast_transaction(trans)
                     
     def validate_transaction(self, transaction): 
         """
@@ -76,33 +88,37 @@ class Node:
         If the transaction is validated by the node, it gets added to the transaction list.
         """
         endpoint='/validate_transaction'
-        # for node in self.ring :
-        #     # address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
+        for node in self.ring.values() :
+            if node[0]!=self.id :
+                address = 'http://' + node[1] +':'+ node[2] + endpoint
+                print("sending transaction to ", address)
+                response = requests.post(address, data=transaction.to_dict())
+                if response.status_code != 200: 
+                    print("transaction couldnt be validated")
+                    return False
+        endpoint='/receive_transaction'
+        for node in self.ring.values() :
+            if node[0]!=self.id :
+                address = 'http://' + node[1] +':'+ node[2] + endpoint
+                response = requests.post(address,data=transaction.to_dict())
+                if response.status_code != 200:
+                    print("node" , node[0], "couldnt receive transaction")
+        print(" successfully broadcast")
+                # if (self.validate_transaction(transaction) == True):
+                #     self.add_transaction(transaction)
+        # address= 'http://localhost:5000'+endpoint
+        # response = requests.post(address, data=transaction.to_dict())
+        # if response.status_code == 200:
+        #     endpoint='/receive_transaction'
         #     address= 'http://localhost:5000'+endpoint
-        #     response = requests.post(address, data=transaction.to_dict())
-        #     if response.status_code == 200: #prepei na orisoume to correct
-        #         endpoint='/receive_transaction'
-        #         address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
-        #         response = requests.post(address,data=transaction.to_dict())
-        #         if response.status_code == 200:
-        #                 print(" successfully broadcast")
-        #     # if (self.validate_transaction(transaction) == True):
-        #     #     self.add_transaction(transaction)
-        #     else :
-        #         print("Transaction couldn't be validated")
-        address= 'http://localhost:5000'+endpoint
-        response = requests.post(address, data=transaction.to_dict())
-        if response.status_code == 200:
-            endpoint='/receive_transaction'
-            address= 'http://localhost:5000'+endpoint
-            response = requests.post(address,data=transaction.to_dict())
-            if response.status_code == 200:
-                    print("Transaction successfully broadcast")
-        if (transaction.verify_signature()):
-             print("Transaction signature is verified")
-             self.add_transaction(transaction)
-        else :
-            print("Transaction couldn't be validated")
+        #     response = requests.post(address,data=transaction.to_dict())
+        #     if response.status_code == 200:
+        #             print("Transaction successfully broadcast")
+        # if (transaction.verify_signature()):
+        #      print("Transaction signature is verified")
+        #      self.add_transaction(transaction)
+        # else :
+        #     print("Transaction couldn't be validated")
 
     def broadcast_block(self, hash):
         endpoint='/receive_valid_block'
@@ -141,9 +157,9 @@ class Node:
         # if transaction.sender_address == self.wallet.address or transaction.receiver_address == self.wallet.address :
         #     self.wallet.transactions.append(transaction)
         self.wallet.transactions.append(transaction)
-
+        print("old sender amount" ,self.ring[transaction.sender_address][3] )
         self.ring[transaction.sender_address][3] -= (transaction.amount) #subtract the amount from sender, no matter the transaction type
-        
+        print("new sender amount" ,self.ring[transaction.sender_address][3] )
         if transaction.type == 0: #coin 
             self.current_block.fees += transaction.fees
             self.ring[transaction.receiver_address][3] += transaction.amount

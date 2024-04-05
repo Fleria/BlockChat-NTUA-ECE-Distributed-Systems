@@ -7,6 +7,8 @@ import blockchain
 import json
 import block
 
+total_nodes=3
+
 rest_api = Blueprint('rest_api', __name__)
 
 # app = Flask(__name__)
@@ -33,9 +35,9 @@ def register_to_ring() :
     print("register node" , key ,"with address", address, port, "to ring of len" , id)
     my_node.register_node_to_ring(id,address,port,key,1000)
 
-    if id == 2 :
+    if id == total_nodes-1 :
         for node in my_node.ring.values() :
-            if node[0] !=0 and node[0]!=2 :
+            if node[0] !=0 and node[0]!=total_nodes-1 :
                 print(node)
                 url="http://"+ node[1] + ':'+node[2] +'/share_ring'
                 print(url)
@@ -52,8 +54,11 @@ def register_to_ring() :
 def share_ring():
     #print(request.form['ring'])
     data = json.loads(request.form['ring'])
-    for node in data.values() :
+    my_node.ring=data
+
+    for node in my_node.ring.values() :
         print(node)
+    print(my_node.ring)
     return jsonify(),200
 
 
@@ -66,10 +71,12 @@ def balance():
 def send_transaction():
     id = request.form['id']
     if request.form.get('message') :
+        print('message trans : ',request.form['message'], " to node ", id)
         my_node.create_transaction(id,0,request.form['message'])
-        print('message trans : ',request.form['message'])
+       
     elif request.form.get('amount') :
-        print('coin trans')
+        print('coin trans', request.form['amount'])
+        my_node.create_transaction(id,request.form['amount'])
     else :
         print('stake trans')
     return jsonify(status=200)
@@ -106,9 +113,9 @@ def validate_transaction() :
 @rest_api.route('/receive_transaction',methods=['POST'])
 def receive_transaction() :
     trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["amount"],request.form["message"],request.form["signature"],request.form["transaction_id"])
-    # my_node.add_transaction(trans)
-    print("successfuly received")
-    return jsonify(status=200)
+    my_node.add_transaction(trans)
+    print("successfuly received", trans.to_dict())
+    return jsonify(),200
 
 @rest_api.route('/receive_valid_block',methods=['POST'])
 def valid_block():

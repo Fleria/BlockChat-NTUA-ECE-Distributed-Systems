@@ -11,7 +11,7 @@ class Block:
         self.validator = validator
         self.index = index 
         self.transactions_list = []
-        self.capacity = 1
+        self.capacity = 5
         self.current_hash = None
         self.fees = 0
 
