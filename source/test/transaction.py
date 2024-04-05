@@ -6,32 +6,32 @@ from Crypto.Signature import PKCS1_v1_5
 import base64
 import json
 
-def verify_signature2(sender_address,trans_id,signature):
-        """
-        Verifies the signature of the transaction using the sender's public key.
-        Returns True or False accordingly.
-        """
-        public_key = RSA.import_key(sender_address)
-        signature = base64.b64decode(signature)
-        h = trans_id
-        verifier = PKCS1_v1_5.new(public_key)
-        if verifier.verify(h, signature): 
-            print("Transaction signature is valid")
-            verify = True
-        else:
-            print("Transaction signature is not valid")
-            verify = False
-        return verify
+# def verify_signature2(sender_address,trans_id,signature):
+#         """
+#         Verifies the signature of the transaction using the sender's public key.
+#         Returns True or False accordingly.
+#         """
+#         public_key = RSA.import_key(sender_address)
+#         signature = base64.b64decode(signature)
+#         h = trans_id
+#         verifier = PKCS1_v1_5.new(public_key)
+#         if verifier.verify(h, signature): 
+#             print("Transaction signature is valid")
+#             verify = True
+#         else:
+#             print("Transaction signature is not valid")
+#             verify = False
+#         return verify
 
 class Transaction:
     """
     Implementation for a transaction between two nodes.
     """
-    def __init__(self, sender_address, nonce, reciever_address,  value, message, type=None,signature=None,id=None):
+    def __init__(self, sender_address, nonce, receiver_address,  value, message, signature=None,id=None):
         self.transaction_id = id #transaction hash
         self.signature = signature
         self.sender_address = sender_address #sender public key
-        self.reciever_address=reciever_address # recipient public key 
+        self.receiver_address = receiver_address # recipient public key 
         self.type = type #type 0: coin, type 1: message, type 2: stake
         self.nonce = nonce
         self.fees = 0
@@ -52,7 +52,7 @@ class Transaction:
     def to_dict(self):
         dict = {
             "sender_address": self.sender_address,
-            "receiver_address": self.reciever_address,
+            "receiver_address": self.receiver_address,
             "amount" : self.amount,
             "message" : self.message,
             "type": self.type,
@@ -64,7 +64,7 @@ class Transaction:
     def to_dict1(self):
         dict = {
             "sender_address": self.sender_address,
-            "receiver_address": self.reciever_address,
+            "receiver_address": self.receiver_address,
             "amount" : self.amount,
             "message" : self.message,
             "type": self.type,
@@ -96,10 +96,8 @@ class Transaction:
         h = SHA256.new(self.transaction_id.encode("ISO-8859-1"))
         verifier = PKCS1_v1_5.new(public_key)
         if verifier.verify(h, signature): 
-            print("Transaction signature is valid")
             verify = True
         else:
-            print("Transaction signature is not valid")
             verify = False
         return verify
     

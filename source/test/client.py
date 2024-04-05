@@ -50,14 +50,13 @@ while True:
         words = action.split()
         
         if words[0] == 't':
-            type = words[1]
-            id = words[2]
-            message = words[3]
+            id = words[1]
+            message = words[2]
             endpoint = '/send_transaction'
             address = 'http://' + my_ip + ':' + my_port + endpoint
-            if type == 'c':
+            if message.isdigit():
                 response = requests.post(address, data={'id': id, 'amount': message})
-            elif type == 'm':
+            else:
                 response = requests.post(address, data={'id': id, 'message': message})
             print("\n")
         

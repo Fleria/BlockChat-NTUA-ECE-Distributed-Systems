@@ -4,8 +4,6 @@ import json
 import Crypto
 from Crypto.Hash import SHA256
 
-
-
 class Block:
     def __init__(self,index,validator):
         self.previous_hash = None
@@ -42,10 +40,14 @@ class Block:
         """
         Appends transaction to block, then checks if block reached capacity.
         """
-        self.transactions_list.append(transaction) #tested
+        self.transactions_list.append(transaction)
+        print("DEBUGGING")
+        for t in self.transactions_list:
+            print(t.amount)
+        print("transactions list length for this block: " + str(len(self.transactions_list)))
         if self.capacity > len(self.transactions_list):
             print("NOT AT CAPACITY")
             return True
         else:
-            print("Block is at capacity !!!")
+            print("Block is at capacityyyyyyyyy !!!")
             return False

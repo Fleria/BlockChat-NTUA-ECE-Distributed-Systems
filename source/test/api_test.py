@@ -41,12 +41,12 @@ def send_transaction():
 @rest_api.route('/view_block',methods=['GET'] )
 def view_block():
     block = {}
-    last_block = bc.blocks_of_blockchain[-1]
+    last_block = my_node.blockchain.blocks_of_blockchain[-1]
     transactions_list = last_block.transactions_list
     validator = last_block.validator
     for i, transaction in enumerate(transactions_list):
-        block[str(i)] = transaction #testing, kanonika thelei transaction.to_dict()
-    return jsonify(block=block, validator=validator, status=200)
+        block[str(i)] = transaction.message #testing, kanonika thelei transaction.to_dict()
+    return jsonify(block=block,validator=validator, status=200)
 
 # @rest_api.route('/view_block',methods=['GET'] ) #this works for a block
 # def view_block():
@@ -58,13 +58,10 @@ def view_block():
 
 @rest_api.route('/validate_transaction',methods=['POST'])
 def validate_transaction() :
-    print(request.form)
-    print(100)
-    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["amount"],request.form["message"],request.form["type"],request.form["signature"],request.form["transaction_id"])
-    print(trans.transaction_id)
-    if trans.verify_signature():
-        print("valid transaction")
-        return jsonify(),200
+    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["amount"],request.form["message"],request.form["signature"],request.form["transaction_id"])
+    if trans.verify_signature(): #edo theloume if validate_transaction
+        print("Valid transaction")
+        return (jsonify(),200)
     # print(trans.to_dict())
     # if transaction.verify_signature2(request.form["sender_address"],request.form["transaction_id"],request.form["signature"]): 
     #     print("valid transaction")
@@ -72,7 +69,7 @@ def validate_transaction() :
     
 @rest_api.route('/receive_transaction',methods=['POST'])
 def receive_transaction() :
-    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["amount"],request.form["message"],request.form["type"],request.form["signature"],request.form["transaction_id"])
+    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["amount"],request.form["message"],request.form["signature"],request.form["transaction_id"])
     # my_node.add_transaction(trans)
     print("successfuly received")
     return jsonify(status=200)

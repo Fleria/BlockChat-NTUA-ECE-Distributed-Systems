@@ -33,7 +33,6 @@ class Node:
         self.ring2 = {'my_node_key' : [0, '127.0.0.1', '5000', self.BCC, 0]}
 
     def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
-
         self.ring[public_key] = [id, ip, port, balance]
 
     # def generate_wallet(): 
@@ -46,11 +45,10 @@ class Node:
         """
         Creates a transaction object and initialises it, then broadcasts it.
         """
-        #print(self.id)
         trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_address, amount, message, self.wallet.private_key)
         self.nonce += 1
         trans.nonce = self.nonce #transaction nonce is current node nonce
-        self.current_block.check_and_add_transaction_to_block(trans)
+        #self.current_block.check_and_add_transaction_to_block(trans)
         # trans.hashTransaction()
         trans.sign_transaction(self.wallet.private_key)
         self.broadcast_transaction(trans)
@@ -96,18 +94,15 @@ class Node:
             address= 'http://localhost:5000'+endpoint
             response = requests.post(address,data=transaction.to_dict())
             if response.status_code == 200:
-                    print(" successfully broadcast")
+                    print("Transaction successfully broadcast")
         if (transaction.verify_signature()):
-             print("transaction added successfully to current block " + str(self.current_block)+ ", id is" + str(transaction.transaction_id)) #testing
+             print("Transaction signature is verified")
              self.add_transaction(transaction)
         else :
             print("Transaction couldn't be validated")
 
     def broadcast_block(self, hash):
-        print("lalala")
         endpoint='/receive_valid_block'
-        print("lololo")
-        print(self.current_block.current_hash)
         #for node in self.ring2 :
             #address = 'http://' + str(node[1]) +':'+ str(node[2]) + endpoint
         address= 'http://localhost:5000'+endpoint
@@ -140,18 +135,19 @@ class Node:
         Balances the wallets accordingly.
         Checks if current block is full after adding the transaction.
         """
-        if transaction.sender_address == self.wallet.address or transaction.reciever_address == self.wallet.address :
-            self.wallet.transactions.append(transaction)
+        # if transaction.sender_address == self.wallet.address or transaction.receiver_address == self.wallet.address :
+        #     self.wallet.transactions.append(transaction)
+        self.wallet.transactions.append(transaction)
 
         self.ring[transaction.sender_address][3] -= (transaction.amount) #subtract the amount from sender, no matter the transaction type
         
         if transaction.type == 0: #coin 
             self.current_block.fees += transaction.fees
-            self.ring[transaction.reciever_address][3] += transaction.amount
+            self.ring[transaction.receiver_address][3] += transaction.amount
             print("coin transaction added") #testing
 
         if transaction.type == 1: #message 
-            if transaction.reciever_address == self.wallet.address:
+            if transaction.receiver_address == self.wallet.address:
                 self.wallet.messages.append(transaction.message)
                 self.current_block.fees += transaction.fees
                 print("message transaction added") #testing
@@ -161,16 +157,18 @@ class Node:
             self.ring[transaction.sender_address][4] = transaction.amount
             print("stake transaction added") #testing
 
-        if (self.current_block.check_and_add_transaction_to_block(transaction) == True): #testing
-            return
+        # if (self.current_block.check_and_add_transaction_to_block(transaction) == True): #testing
+        #     return
         
         if (self.current_block.check_and_add_transaction_to_block(transaction) == False): #if current block is at capacity, execute proof of stake and create new block
             self.blockchain.add_to_blockchain(self.current_block)
+            print("Current length of blockchain is: " + str(len(self.blockchain.blocks_of_blockchain))) #testing
             validator = self.select_validator()
             if self.id == validator : 
-                print("I am the validator")
+                print("I am the validator, node: " + str(self.id))
                 #self.broadcast_block(self.current_block.current_hash) 
-                self.broadcast_block(self.current_block.capacity) #testing here now
+                print("Capacity: " + str(self.current_block.capacity))
+                self.broadcast_block(self.current_block.capacity) #testing
             else: 
                 validator[0].wallet.unspent += self.current_block.fees
             

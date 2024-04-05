@@ -13,7 +13,6 @@ class Blockchain:
         """
         Adds block to blockchain.
         """
-        #print("BLOCK ADDEDDDDDDDDDDDDDDDDDD, HERE IT IS")
         self.blocks_of_blockchain.append(block)
         self.length += 1 
         #for block in self.blocks_of_blockchain:
