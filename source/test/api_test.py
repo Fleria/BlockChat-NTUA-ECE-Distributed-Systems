@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask import Flask
+import requests
 import node 
 import transaction
 import blockchain
@@ -10,16 +11,51 @@ rest_api = Blueprint('rest_api', __name__)
 
 # app = Flask(__name__)
 
-my_node = node.Node()
-bc = blockchain.Blockchain()
+my_node = node.Node(bootstrap_addr='localhost',bootstrap_port='5000',ip='localhost')
+# bc = blockchain.Blockchain()
 
-block1 = block.Block(1, 69)
-block1.transactions_list = ["first"]
-block2 = block.Block(2, 420)
-block2.transactions_list = ["second", "third"]
+# block1 = block.Block(1, 69)
+# block1.transactions_list = ["first"]
+# block2 = block.Block(2, 420)
+# block2.transactions_list = ["second", "third"]
 
-bc.add_to_blockchain(block1)
-bc.add_to_blockchain(block2)
+# bc.add_to_blockchain(block1)
+# bc.add_to_blockchain(block2)
+
+
+@rest_api.route('/register_to_ring', methods=['POST'])
+def register_to_ring() :
+    #call from new nodes to bootstrap
+    key = request.form["public_key"]
+    address = request.form["address"]
+    port = request.form["port"]
+    id = len(my_node.ring)
+    print("register node" , key ,"with address", address, port, "to ring of len" , id)
+    my_node.register_node_to_ring(id,address,port,key,1000)
+
+    if id == 2 :
+        for node in my_node.ring.values() :
+            if node[0] !=0 and node[0]!=2 :
+                print(node)
+                url="http://"+ node[1] + ':'+node[2] +'/share_ring'
+                print(url)
+                data = {'ring': json.dumps(my_node.ring)}
+                response = requests.post(url, data = data)
+                if(response.status_code == 200) :
+                    print("successful ring sharing for node ", id)
+        return jsonify({'id': id, 'ring':my_node.ring}),200
+    else : 
+        return jsonify({'id':id}),200
+    
+
+@rest_api.route('/share_ring', methods=['POST'])
+def share_ring():
+    #print(request.form['ring'])
+    data = json.loads(request.form['ring'])
+    for node in data.values() :
+        print(node)
+    return jsonify(),200
+
 
 @rest_api.route('/balance',methods=['GET'])
 def balance():

@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, render_template
 #from flask_cors import CORS
+import requests
 import json
+from argparse import ArgumentParser
 import block
 import node
 import blockchain
@@ -25,5 +27,34 @@ app = Flask(__name__)
 app.register_blueprint(rest_api)
 #blockchain = Blockchain()
 
-app.run(port=5000)
+
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    required = parser.add_argument_group()
+    required.add_argument('-p',type=str,required=True)
+    args=parser.parse_args()
+    port=args.p
+    if port == '5000' :#bootstrap node
+        print("bootstrap node entered")
+        my_node.port=port
+        my_node.register_node_to_ring(0,'localhost','5000',my_node.wallet.address,1000)
+        print("bootstrap node registered")
+        app.run(port=port)
+    else : #call to bootstrap to register.
+        print("node", port, "entered")
+        my_node.port=port
+        endpoint = 'http://' + my_node.bootstrap_addr + ':' + my_node.bootstrap_port + '/register_to_ring'
+        info = {'public_key':my_node.wallet.address,
+                'address':'localhost',
+                'port':port
+                }
+        response = requests.post(endpoint,info)
+        res = response.json()
+        my_node.id=res['id']
+        print("node registered with id ", my_node.id)
+        if 'ring' in res :print("aquired ring " , res['ring'])
+        app.run(port=port)
+        
+
+
 #my_node.create_transaction( 0, 10, ' diaroia')

@@ -1,9 +1,9 @@
-from Flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request
 import node
 import transaction
 import requests
 
-total_nodes = 5
+total_nodes = 2
 
 my_node = node.Node()
 
@@ -18,14 +18,19 @@ def register_to_ring() :
     id = len(my_node.ring)
     my_node.register_node_to_ring(id,address,port,key,1000)
 
-    if id == total_nodes :
+    if id == total_nodes-1 :
         for node in my_node.ring :
             url="http://"+ node[1] + ':'+node[2] +'/share_ring'
             response = requests.post(url, data = my_node.ring)
             if(response.status_code == 200) :
                 print("successful ring sharing for node ", id)
     
-    return jsonify({'id': id}, status = 200)
+    return jsonify({'id': id}),200
+
+@rest_api.route('/share_ring', methods=['POST'])
+def share_ring():
+    print(request)
+
 
 @rest_api.route('/validate_transaction',methods=['POST'])
 def validate_transaction() :

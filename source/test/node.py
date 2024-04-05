@@ -16,21 +16,24 @@ class Node:
     """
     Implementation for each of the 5 nodes of the system.
     """
-    def __init__(self,ip=None,port=None):
+    def __init__(self,bootstrap_addr,bootstrap_port,ip=None,port=None):
         self.BCC = 1000
         self.nonce = 0
-        self.id = 0
+        self.ip=ip
+        self.port=port
+        self.id = None
         self.wallet = wallet.Wallet()
-        self.ring = {self.wallet.address : [0, ip, port, self.BCC,0]} #store information for every node(id, adrdress (ip, port), balance, stake)
+        # self.ring = {self.wallet.address : [0, ip, port, self.BCC,0]} #store information for every node(id, adrdress (ip, port), balance, stake)
+        self.ring={}
         self.current_block = block.Block(1,None)
         self.blockchain = blockchain.Blockchain()
         self.PoS_select = Lock()
         self.current_validator = None
-        self.bootstrap_addr = None
-        self.bootstrap_port = None
+        self.bootstrap_addr = bootstrap_addr
+        self.bootstrap_port = bootstrap_port
         self.stake = 0
         self.message_fees = 0
-        self.ring2 = {'my_node_key' : [0, '127.0.0.1', '5000', self.BCC, 0]}
+        #self.ring2 = {'my_node_key' : [0, '127.0.0.1', '5000', self.BCC, 0]}
 
     def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
         self.ring[public_key] = [id, ip, port, balance]
@@ -181,10 +184,10 @@ class Node:
         Checks if each node's stakes reach the threshold and, if not,
         adds the next node's stakes and tries again.
         """
-        total_stakes = sum(amount[4] for amount in self.ring2.values())
+        total_stakes = sum(amount[4] for amount in self.ring.values())
         threshold = random.uniform(0, total_stakes)
         current = 0
-        for node in self.ring2.values():
+        for node in self.ring.values():
             node_index = int(node[4])
             current += node_index
             if current >= threshold:
