@@ -40,11 +40,12 @@ if __name__ == '__main__':
         my_node.register_node_to_ring(0,'localhost','5000',my_node.wallet.address,1000)
         print("bootstrap node registered")
         app.run(port=port)
-    else : #call to bootstrap to register.
+    elif port == '5001' : #call to bootstrap to register.
         print("node", port, "entered")
         my_node.port=port
         endpoint = 'http://' + my_node.bootstrap_addr + ':' + my_node.bootstrap_port + '/register_to_ring'
-        info = {'public_key':my_node.wallet.address,
+        info = {
+                'public_key':my_node.wallet.address,
                 'address':'localhost',
                 'port':port
                 }
@@ -55,8 +56,61 @@ if __name__ == '__main__':
         if 'ring' in res : 
             my_node.ring=res['ring']
         print(my_node.ring)
-        app.run(port=port)
-        
+        app.run(port=port)    
+    elif port == '5002' : #call to bootstrap to register.
+        print("node", port, "entered")
+        my_node.port=port
+        endpoint = 'http://' + my_node.bootstrap_addr + ':' + my_node.bootstrap_port + '/register_to_ring'
+        info = {
+                'public_key':my_node.wallet.address,
+                'address':'localhost',
+                'port':port
+                }
+        response = requests.post(endpoint,info)
+        res = response.json()
+        my_node.id=res['id']
+        print("node registered with id ", my_node.id)
+        if 'ring' in res : 
+            my_node.ring=res['ring']
+        #print(my_node.ring)
+        app.run(port=port)    
 
+
+"""
+    else:
+        print("node", port, "entered")
+        my_node.port=port
+        endpoint = 'http://' + my_node.bootstrap_addr + ':' + my_node.bootstrap_port + '/register_to_ring'
+        info = {
+                'public_key':my_node.wallet.address,
+                'address':'localhost',
+                'port':port
+                }
+        response = requests.post(endpoint,info)
+        res = response.json()
+        my_node.id=res['id']
+        print("node registered with id ", my_node.id)
+        if 'ring' in res : 
+            my_node.ring=res['ring']
+        print(my_node.ring)
+        app.run(port=port)    
+    elif port == '5002' : #call to bootstrap to register.
+        print("node", port, "entered")
+        my_node.port=port
+        endpoint = 'http://' + my_node.bootstrap_addr + ':' + my_node.bootstrap_port + '/register_to_ring'
+        info = {
+                'public_key':my_node.wallet.address,
+                'address':'localhost',
+                'port':port
+                }
+        response = requests.post(endpoint,info)
+        res = response.json()
+        my_node.id=res['id']
+        print("node registered with id ", my_node.id)
+        if 'ring' in res : 
+            my_node.ring=res['ring']
+        print(my_node.ring)
+        app.run(port=port)     
+"""
 
 #my_node.create_transaction( 0, 10, ' diaroia')

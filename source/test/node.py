@@ -23,20 +23,20 @@ class Node:
         self.port=port
         self.id = None
         self.wallet = wallet.Wallet()
-        # self.ring = {self.wallet.address : [0, ip, port, self.BCC,0]} #store information for every node(id, adrdress (ip, port), balance, stake)
+        # self.ring = {self.wallet.address : [id, ip, port, self.BCC,0]} #store information for every node(id, adrdress (ip, port), balance, stake)
         self.ring={}
         self.current_block = block.Block(1,None)
         self.blockchain = blockchain.Blockchain()
         self.PoS_select = Lock()
-        self.current_validator = None
+        #t 1self.current_validator = None
         self.bootstrap_addr = bootstrap_addr
         self.bootstrap_port = bootstrap_port
-        self.stake = 0
+        self.my_stake = 10
         self.message_fees = 0
         #self.ring2 = {'my_node_key' : [0, '127.0.0.1', '5000', self.BCC, 0]}
 
     def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
-        self.ring[public_key] = [id, ip, port, balance]
+        self.ring[public_key] = [id, ip, port, balance, self.my_stake]
 
     # def generate_wallet(): 
     #     """
@@ -52,9 +52,9 @@ class Node:
         for key in self.ring :
             print(key, "\n" , self.ring[key],self.ring[key][0])                      # kanoume transaction me node id kai 
             if str(self.ring[key][0]) == receiver_id :   # briskoume to node public key edo
-                print(self.ring[key][0],receiver_id)
+                #print(self.ring[key][0],receiver_id)
                 receiver_address=key    
-                print("the key we need is ", receiver_address)
+                #print("the key we need is ", receiver_address)
                 trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_address, amount, message, self.wallet.private_key)
                 self.nonce += 1
                 trans.nonce = self.nonce
@@ -104,6 +104,7 @@ class Node:
                 if response.status_code != 200:
                     print("node" , node[0], "couldnt receive transaction")
         print(" successfully broadcast")
+        return
                 # if (self.validate_transaction(transaction) == True):
                 #     self.add_transaction(transaction)
         # address= 'http://localhost:5000'+endpoint
@@ -180,19 +181,28 @@ class Node:
         #     return
         
         if (self.current_block.check_and_add_transaction_to_block(transaction) == False): #if current block is at capacity, execute proof of stake and create new block
+            sorted_ring = {k: v for k, v in sorted(self.ring.items(), key=lambda item: int(item[1][0]))}
+            for address, values in sorted_ring.items():
+                print(f"ID: {values[0]}, IP: {values[1]}, Port: {values[2]}, BCC: {values[3]}, SomeValue: {values[4]}")
             self.blockchain.add_to_blockchain(self.current_block)
             print("Current length of blockchain is: " + str(len(self.blockchain.blocks_of_blockchain))) #testing
             validator = self.select_validator()
+            print("Validator is " + str(validator))
+            self.current_block.validator = validator
             if self.id == validator : 
-                print("I am the validator, node: " + str(self.id))
-                #self.broadcast_block(self.current_block.current_hash) 
+                self.broadcast_block(self.current_block.current_hash) 
                 print("Capacity: " + str(self.current_block.capacity))
                 self.broadcast_block(self.current_block.capacity) #testing
             else: 
-                validator[0].wallet.unspent += self.current_block.fees
+                for address, node_info in sorted_ring.items():
+                    if node_info[0] == validator:
+                        target_address = address
+                sorted_ring[target_address][3] += self.current_block.fees
             
+            #self.current_block.index+=1 prepei na to ftiaksoume
             self.current_block = block.Block(self.current_block.index, self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
-                   
+            self.current_block.index+=1
+
     def select_validator(self):
         """
         Selects a validator for the execution of the Proof-of-Stake algorithm.
@@ -200,14 +210,20 @@ class Node:
         Checks if each node's stakes reach the threshold and, if not,
         adds the next node's stakes and tries again.
         """
+        number = self.current_block.myHash() #kanonika thelei previous hash, na to ftiaksoume sto telos
+        random.seed(number) 
         total_stakes = sum(amount[4] for amount in self.ring.values())
         threshold = random.uniform(0, total_stakes)
+        print("Threshold is "+str(threshold))
         current = 0
         for node in self.ring.values():
+            print("my id is "+str(node[0]))
             node_index = int(node[4])
             current += node_index
+            print(current)
             if current >= threshold:
                 validator = node[0]
+                print("VALIDATOR IS NODE "+str(validator))
         return validator
     
     def PoS(self):

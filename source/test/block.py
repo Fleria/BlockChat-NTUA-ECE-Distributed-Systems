@@ -1,8 +1,19 @@
+import block
+import wallet
+import transaction
 import blockchain
-import time 
-import json
 import Crypto
+import Crypto.Random
+import hashlib
 from Crypto.Hash import SHA256
+from Crypto.PublicKey import RSA
+from Crypto.Signature import PKCS1_v1_5
+import base64
+import requests
+from threading import Lock
+import random
+import time
+import json
 
 class Block:
     def __init__(self,index,validator):
@@ -11,7 +22,7 @@ class Block:
         self.validator = validator
         self.index = index 
         self.transactions_list = []
-        self.capacity = 5
+        self.capacity = 2
         self.current_hash = None
         self.fees = 0
 
@@ -27,14 +38,16 @@ class Block:
         Calculates block hash and assigns it to current_hash.
         """
         hash_message = {
-        'previous_hash': self.previous_hash,
-        'timestamp': self.timestamp,
-        'index': self.index
+        #'previous_hash': self.previous_hash,
+        'timestamp': self.index,
+        #'index': self.index
         }
+        print("timestamp is")
+        print(self.timestamp)
         block_dump = json.dumps(hash_message.__str__())
-        hash1 = hash.SHA256.new(block_dump.encode("ISO-8859-1")).hexdigest()
+        hash1 = hashlib.sha256(block_dump.encode("ISO-8859-1")).hexdigest()
         self.current_hash = hash1
-        return hash1
+        return int(hash1,16)
     
     def check_and_add_transaction_to_block(self,transaction):
         """

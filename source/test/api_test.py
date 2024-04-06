@@ -27,20 +27,17 @@ my_node = node.Node(bootstrap_addr='localhost',bootstrap_port='5000',ip='localho
 
 @rest_api.route('/register_to_ring', methods=['POST'])
 def register_to_ring() :
-    #call from new nodes to bootstrap
     key = request.form["public_key"]
     address = request.form["address"]
     port = request.form["port"]
     id = len(my_node.ring)
-    print("register node" , key ,"with address", address, port, "to ring of len" , id)
+    print("register node with address", address, port, "to ring of len" , id+1)
     my_node.register_node_to_ring(id,address,port,key,1000)
 
     if id == total_nodes-1 :
         for node in my_node.ring.values() :
-            if node[0] !=0 and node[0]!=total_nodes-1 :
-                print(node)
+            if node[0] !=0 and node[0]!=total_nodes-1 : #not bootstrap or final node
                 url="http://"+ node[1] + ':'+node[2] +'/share_ring'
-                print(url)
                 data = {'ring': json.dumps(my_node.ring)}
                 response = requests.post(url, data = data)
                 if(response.status_code == 200) :
@@ -52,13 +49,12 @@ def register_to_ring() :
 
 @rest_api.route('/share_ring', methods=['POST'])
 def share_ring():
-    #print(request.form['ring'])
     data = json.loads(request.form['ring'])
     my_node.ring=data
-
-    for node in my_node.ring.values() :
-        print(node)
-    print(my_node.ring)
+    #for node in my_node.ring.values() :
+     #   print("now printing ring")
+      #  print(node)
+    #print(my_node.ring)
     return jsonify(),200
 
 
@@ -73,7 +69,6 @@ def send_transaction():
     if request.form.get('message') :
         print('message trans : ',request.form['message'], " to node ", id)
         my_node.create_transaction(id,0,request.form['message'])
-       
     elif request.form.get('amount') :
         print('coin trans', request.form['amount'])
         my_node.create_transaction(id,request.form['amount'])
@@ -84,6 +79,9 @@ def send_transaction():
 @rest_api.route('/view_block',methods=['GET'] )
 def view_block():
     block = {}
+    if(len(my_node.blockchain.blocks_of_blockchain) == 0):
+        print("No block has been validated yet!")
+        return jsonify(status=400)
     last_block = my_node.blockchain.blocks_of_blockchain[-1]
     transactions_list = last_block.transactions_list
     validator = last_block.validator

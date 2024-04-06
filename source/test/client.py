@@ -78,6 +78,7 @@ while True:
             print("And the list of transactions for the block are:")
             print(block_data)
             print("\n")
+            #na valoume try catch gia to an ro response einai 400
         
         elif words[0] == 'balance':
             endpoint = '/balance'

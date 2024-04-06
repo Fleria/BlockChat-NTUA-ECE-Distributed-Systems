@@ -33,11 +33,11 @@ response = requests.post(address,data=data)
 if response.status_code==200 :
     print('message trans')
 
-endpoint='/view_block'
-address = 'http://localhost:5000' + endpoint
-response= requests.get(address)
-if response.status_code==200 :
-    print("View block successful")
-    print(response.content)
-else:
-    print("view block not successful")
+# endpoint='/view_block'
+# address = 'http://localhost:5000' + endpoint
+# response= requests.get(address)
+# if response.status_code==200 :
+#     print("View block successful")
+#     print(response.content)
+# else:
+#     print("view block not successful")
