@@ -60,20 +60,21 @@ def share_ring():
 
 @rest_api.route('/balance',methods=['GET'])
 def balance():
-    bal = my_node.wallet.unspent
+    bal = my_node.BCC
     return jsonify({'balance':bal}),200
 
 @rest_api.route('/send_transaction',methods=['POST'])
 def send_transaction():
-    id = request.form['id']
     if request.form.get('message') :
-        print('message trans : ',request.form['message'], " to node ", id)
-        my_node.create_transaction(id,0,request.form['message'])
-    elif request.form.get('amount') :
-        print('coin trans', request.form['amount'])
-        my_node.create_transaction(id,request.form['amount'])
-    else :
+        id = request.form['id']
+        print('trans : ',request.form['message'], " to node ", id)
+        my_node.create_transaction(id,request.form['sender'],request.form['message'])
+    # elif request.form.get('amount').isdigit() : #coin
+    #     print('coin trans', request.form['message'])
+    #     my_node.create_transaction(id,request.form['amount'])
+    else : #stake
         print('stake trans')
+        my_node.stake(request.form['stake'])
     return jsonify(status=200)
 
 @rest_api.route('/view_block',methods=['GET'] )
@@ -85,9 +86,10 @@ def view_block():
     last_block = my_node.blockchain.blocks_of_blockchain[-1]
     transactions_list = last_block.transactions_list
     validator = last_block.validator
+    index = last_block.index
     for i, transaction in enumerate(transactions_list):
         block[str(i)] = transaction.message #testing, kanonika thelei transaction.to_dict()
-    return jsonify(block=block,validator=validator, status=200)
+    return jsonify(block=block,validator=validator, index=index, status=200)
 
 # @rest_api.route('/view_block',methods=['GET'] ) #this works for a block
 # def view_block():
@@ -99,7 +101,7 @@ def view_block():
 
 @rest_api.route('/validate_transaction',methods=['POST'])
 def validate_transaction() :
-    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["amount"],request.form["message"],request.form["signature"],request.form["transaction_id"])
+    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["message"],request.form["signature"],request.form["transaction_id"])
     if trans.verify_signature(): #edo theloume if validate_transaction
         print("Valid transaction")
         return (jsonify(),200)
@@ -110,7 +112,7 @@ def validate_transaction() :
     
 @rest_api.route('/receive_transaction',methods=['POST'])
 def receive_transaction() :
-    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["amount"],request.form["message"],request.form["signature"],request.form["transaction_id"])
+    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["message"],request.form["signature"],request.form["transaction_id"])
     my_node.add_transaction(trans)
     print("successfuly received", trans.to_dict())
     return jsonify(),200
@@ -123,3 +125,12 @@ def valid_block():
 
 
 #app.run(port=5000)
+"""
+TO DO :
+-na tsekaroume oti kanei balance sosta to ipoloipo
+-na tsekaroume stake
+-client gia 5-10 nodes
+-main gia 5-10 nodes
+-self.BCC vs wallet.unspent sto ring
+-sender id? stin create transaction prepei na to pairnoume apo to port kai to ring
+"""

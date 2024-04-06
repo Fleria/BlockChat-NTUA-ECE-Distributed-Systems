@@ -44,18 +44,18 @@ class Node:
     #     """
     #     return wallet.Wallet()
     
-    def create_transaction(self, receiver_id, amount=None, message=None):
+    def create_transaction(self, receiver_id, message):
         """
         Creates a transaction object and initialises it, then broadcasts it.
         """
         print("receiver_id == " , receiver_id)
         for key in self.ring :
-            print(key, "\n" , self.ring[key],self.ring[key][0])                      # kanoume transaction me node id kai 
+            print(key, "\n" , self.ring[key],self.ring[key][0]) # kanoume transaction me node id kai 
             if str(self.ring[key][0]) == receiver_id :   # briskoume to node public key edo
                 #print(self.ring[key][0],receiver_id)
                 receiver_address=key    
                 #print("the key we need is ", receiver_address)
-                trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_address, amount, message, self.wallet.private_key)
+                trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_address, message, self.wallet.private_key)
                 self.nonce += 1
                 trans.nonce = self.nonce
                 trans.sign_transaction(self.wallet.private_key)
@@ -143,6 +143,7 @@ class Node:
 
     def stake(self,amount): 
         self.create_transaction(0,0,amount,None)
+        print("Current stake is " + str(self.stake))
 
     # def create_new_block(self):
     #     self.current_block=block.Block(self.current_block.current_hash)
@@ -198,8 +199,7 @@ class Node:
                     if node_info[0] == validator:
                         target_address = address
                 sorted_ring[target_address][3] += self.current_block.fees
-            
-            #self.current_block.index+=1 prepei na to ftiaksoume
+
             self.current_block = block.Block(self.current_block.index, self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
             self.current_block.index+=1
 
@@ -210,13 +210,14 @@ class Node:
         Checks if each node's stakes reach the threshold and, if not,
         adds the next node's stakes and tries again.
         """
+        sorted_ring = {k: v for k, v in sorted(self.ring.items(), key=lambda item: int(item[1][0]))}
         number = self.current_block.myHash() #kanonika thelei previous hash, na to ftiaksoume sto telos
         random.seed(number) 
-        total_stakes = sum(amount[4] for amount in self.ring.values())
+        total_stakes = sum(amount[4] for amount in sorted_ring.values())
         threshold = random.uniform(0, total_stakes)
         print("Threshold is "+str(threshold))
         current = 0
-        for node in self.ring.values():
+        for node in sorted_ring.values():
             print("my id is "+str(node[0]))
             node_index = int(node[4])
             current += node_index

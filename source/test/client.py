@@ -52,12 +52,14 @@ while True:
         if words[0] == 't':
             id = words[1]
             message = words[2]
+            sender = my_port
             endpoint = '/send_transaction'
             address = 'http://' + my_ip + ':' + my_port + endpoint
-            if message.isdigit():
-                response = requests.post(address, data={'id': id, 'amount': message})
-            else:
-                response = requests.post(address, data={'id': id, 'message': message})
+            # if message.isdigit():
+            #     response = requests.post(address, data={'id': id, 'amount': message})
+            # else:
+            #     response = requests.post(address, data={'id': id, 'message': message})
+            response = requests.post(address, data={'id': id, 'message': message, 'sender': sender})
             print("\n")
         
         elif words[0] == 'stake':
@@ -73,8 +75,11 @@ while True:
             response_data = response.json()
             block_data = response_data['block']
             block_validator = response_data['validator']
+            block_index = response_data['index']
             print("The block validator is:")
             print(block_validator)
+            print("And current block index is:")
+            print(block_index)
             print("And the list of transactions for the block are:")
             print(block_data)
             print("\n")
