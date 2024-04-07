@@ -140,28 +140,32 @@ class Node:
         """
         Validator broadcasts block to every node in the ring.
         """
-        endpoint = '/validate_block'
+        endpoint = '/broadcast_block'
         for node in self.ring.values() :
-            if node[0] != validator_id:
+            if node[0] == validator_id:
                 address = 'http://' + node[1] +':'+ node[2] + endpoint
                 response = requests.post(address,data=block.to_dict())
-        # if response.status_code != 200:
-        #     print("Block couldn't be validated")
+        if response.status_code != 200:
+             print("Block couldn't be validated")
         return
 
 
-    def validate_block(self, hash, validator_id):
+    def validate_block(self, block_hash, validator_id):
         """
         Αυτή η συνάρτηση καλείται από τους nodes κατά τη λήψη ενός νέου block (εκτός του genesis block).
         Επαληθεύεται ότι (a) ο validator είναι πράγματι ο σωστός (αυτός που υπέδειξε η κλήση της
         ψευδοτυχαίας γεννήτριας) και ότι (b) το πεδίο previous_hash ισούται πράγματι με το hash του
         προηγούμενου block.
         """
-        if (hash == self.blockchain.blocks_of_blockchain[-1].previous_hash == hash and validator_id==self.select_validator):
-            print("Block is validated")  
-            return True
-        else:
-            return False
+        endpoint = '/receive_block'
+        for node in self.ring.values() :   
+            print("mpika sto loop tis validate_block")
+            #previous_hash = self.blockchain.blocks_of_blockchain[-1].previous_hash
+            #print("block hash by validator is ", block_hash, " and previous hash is ", previous_hash)
+            address = 'http://' + node[1] +':'+ node[2] + endpoint
+            response = requests.post(address,{'block_hash': block_hash, 'validator_id': validator_id, 'my_validator': self.select_validator()})       
+        return
+
 
     def validate_chain():
         return
@@ -248,22 +252,24 @@ class Node:
                 validator = self.select_validator()
                 print("Validator is " + str(validator))
                 self.current_block.validator = validator
+                """
+                This continues the mint_block function.
+                """
                 #if(self.validate_block(self.current_block.previous_hash, validator)):
                 if self.id == validator :
                     self.broadcast_block(self.current_block, self.current_block.validator)
 
-                for key, value in self.ring.items():
-                    if value[0] == self.id:
-                        validator_key = key
+                    for key, value in self.ring.items():
+                        if value[0] == self.id:
+                            validator_key = key
                     
-                #self.ring[validator_key][3] += self.current_block.fees SOS
+                    self.ring[validator_key][3] += self.current_block.fees #SOS
                 # else: 
                 #     for address, node_info in sorted_ring.items():
                 #         if node_info[0] == validator:
                 #             target_address = address
                 #     sorted_ring[target_address][3] += self.current_block.fees
 
-                    #leipei na doume an oloi oi komvoi exoun ton idio validator
                 self.current_block = block.Block(self.current_block.index, self.current_block.validator,previous_hash=self.current_block.previous_hash)
                 self.current_block.current_hash = self.current_block.myHash
                 self.current_block.index+=1
@@ -274,6 +280,7 @@ class Node:
         Creates sum of stakes by each node and randomly chooses a treshold.
         Checks if each node's stakes reach the threshold and, if not,
         adds the next node's stakes and tries again.
+        This is the mint_block function.
         """
         sorted_ring = {k: v for k, v in sorted(self.ring.items(), key=lambda item: int(item[1][0]))}
         number = self.current_block.myHash() #kanonika thelei previous hash, na to ftiaksoume sto telos
@@ -298,6 +305,3 @@ class Node:
 
     def balance(self):
         return self.ring[self.wallet.address][3]
-
-    def mint_block(): #adam
-        return 

@@ -22,7 +22,7 @@ class Block:
         self.validator = validator
         self.index = index 
         self.transactions_list = []
-        self.capacity = 2
+        self.capacity = 1
         self.current_hash = None
         self.fees = 0
 
@@ -39,9 +39,10 @@ class Block:
         Calculates block hash and assigns it to current_hash.
         """
         hash_message = {
-        #'previous_hash': self.previous_hash,
+        'previous_hash': self.previous_hash,
         'timestamp': self.index,
-        #'index': self.index
+        'index': self.index,
+        'transactions_list': self.transactions_list
         }
         print("timestamp is")
         print(self.timestamp)

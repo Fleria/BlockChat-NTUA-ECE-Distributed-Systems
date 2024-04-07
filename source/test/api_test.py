@@ -7,6 +7,7 @@ import blockchain
 import json
 import block
 from argparse import ArgumentParser
+from flask import abort
 
 total_nodes=3
 
@@ -128,22 +129,38 @@ def receive_transaction() :
     my_node.add_transaction(trans)
     return (jsonify(),200)
 
-@rest_api.route('/validate_block',methods=['POST'])
+@rest_api.route('/broadcast_block',methods=['POST'])
 def valid_block():
     prev_hash=request.form['previous_hash']
     validator = request.form['validator']
+    print("I received the validator data from node ", validator)
     my_node.validate_block(prev_hash, validator)
-    print("block is validated")
     return jsonify(status=200)
+
+@rest_api.route('/receive_block',methods=['POST'])
+def receive_block():
+    #block_hash = request.form['block_hash']
+    #print("block hash ok")
+    #previous_hash=request.form['previous_hash']
+    #print("previous hash okay")
+    my_validator = request.form['my_validator']
+    validator_id = request.form['validator_id']
+    #print("block hash is ", block_hash, " and previous hash is ", previous_hash)
+    #if (validator_id == my_validator and block_hash == previous_hash):
+    if (validator_id == my_validator):
+        print("Block has been validated")
+        return jsonify(status=200)
+    else:
+        print("Block couldn't be validated")
+        abort(400)
 
 """
 TO DO :
--client gia 5-10 nodes
 -main gia 5-10 nodes
 -to hash tou block gia validator ston select_validator den einai auto pou prepei
 -ta stake transactions metrane sto block?
 -den exoume generate_wallet
--validate_block: den tsekaroume me kapoio tropo oti oloi oi komvoi exoun idio validator
--genesis block kai validate_chain
--mint_block
+-genesis block kai validate_chain?
+-dialegoyme panta ton 2 gia validator (mallon exei na kanei me to hash pou leo pano)
+-h /receive block den elegxei ta previous hash
 """
