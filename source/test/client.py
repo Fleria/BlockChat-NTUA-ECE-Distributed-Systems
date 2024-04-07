@@ -96,19 +96,22 @@ while True:
         elif words[0] == 'view':
             endpoint = '/view_block'
             address = 'http://' + my_ip + ':' + my_port + endpoint
-            response = requests.get(address)
-            response_data = response.json()
-            block_data = response_data['block']
-            block_validator = response_data['validator']
-            block_index = response_data['index']
-            print("The block validator is:")
-            print(block_validator)
-            print("And current block index is:")
-            print(block_index)
-            print("And the list of transactions for the block are:")
-            print(block_data)
-            print("\n")
-            #na valoume try catch gia to an ro response einai 400
+            try:
+                response = requests.get(address)
+                if response.status_code == 200:
+                    response_data = response.json()
+                    block_data = response_data['block']
+                    block_validator = response_data['validator']
+                    block_index = response_data['index']
+                    print("The block validator is:")
+                    print(block_validator)
+                    # print("And current block index is:")
+                    # print(block_index)
+                    print("And the list of transaction messages for the block are:")
+                    print(block_data)
+                    print("\n")
+            except:
+                print("No valid block yet!")
         
         elif words[0] == 'balance':
             endpoint = '/balance'

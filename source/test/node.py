@@ -22,8 +22,8 @@ class Node:
         self.ip=ip
         self.port=port
         self.id = None
-        self.wallet = None
-        # self.ring = {self.wallet.address : [id, ip, port, self.BCC,0]} #store information for every node(id, adrdress (ip, port), balance, stake)
+        self.wallet = wallet.Wallet()
+        # self.ring = {self.wallet.address : [id, ip, port, self.BCC, stake]} #store information for every node(id, adrdress (ip, port), balance, stake)
         self.ring={}
         self.current_block = block.Block(1,None)
         self.blockchain = blockchain.Blockchain()
@@ -31,16 +31,16 @@ class Node:
         self.bootstrap_port = bootstrap_port
         self.my_stake = 10
         self.message_fees = 0
+        self.current_validator = None
 
     def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
-        self.wallet = self.generate_wallet()
         self.ring[public_key] = [id, ip, port, balance, self.my_stake]
 
-    def generate_wallet(): 
-        """
-        Creates a wallet for this node, with a public and a private key. 
-        """
-        return wallet.Wallet()
+    # def generate_wallet(): 
+    #     """
+    #     Creates a wallet for this node, with a public and a private key. 
+    #     """
+    #     return wallet.Wallet()
     
     def create_transaction(self, sender_port, receiver_id, message, stake):
         """
@@ -135,36 +135,33 @@ class Node:
                     print("node" , node[0], "couldnt receive transaction")
         print(" successfully broadcasted the transaction from node " + str(target_port) + "for all nodes")
         return
-                # if (self.validate_transaction(transaction) == True):
-                #     self.add_transaction(transaction)
-        # address= 'http://localhost:5000'+endpoint
-        # response = requests.post(address, data=transaction.to_dict())
-        # if response.status_code == 200:
-        #     endpoint='/receive_transaction'
-        #     address= 'http://localhost:5000'+endpoint
-        #     response = requests.post(address,data=transaction.to_dict())
-        #     if response.status_code == 200:
-        #             print("Transaction successfully broadcast")
-        # if (transaction.verify_signature()):
-        #      print("Transaction signature is verified")
-        #      self.add_transaction(transaction)
-        # else :
-        #     print("Transaction couldn't be validated")
 
-    def broadcast_block(self, hash):
-        endpoint='/receive_valid_block'
-        address= 'http://localhost:5000'+endpoint
-        response = requests.post(address,data={'hash':hash})
+    def broadcast_block(self, block, validator_id):
+        """
+        Validator broadcasts block to every node in the ring.
+        """
+        endpoint = '/validate_block'
+        for node in self.ring.values() :
+            if node[0] != validator_id:
+                address = 'http://' + node[1] +':'+ node[2] + endpoint
+                response = requests.post(address,data=block.to_dict())
+        # if response.status_code != 200:
+        #     print("Block couldn't be validated")
         return
 
-    def validate_block(self):
+
+    def validate_block(self, hash, validator_id):
         """
         Αυτή η συνάρτηση καλείται από τους nodes κατά τη λήψη ενός νέου block (εκτός του genesis block).
         Επαληθεύεται ότι (a) ο validator είναι πράγματι ο σωστός (αυτός που υπέδειξε η κλήση της
         ψευδοτυχαίας γεννήτριας) και ότι (b) το πεδίο previous_hash ισούται πράγματι με το hash του
         προηγούμενου block.
         """
-        return self.current_block.myHash()
+        if (hash == self.blockchain.blocks_of_blockchain[-1].previous_hash == hash and validator_id==self.select_validator):
+            print("Block is validated")  
+            return True
+        else:
+            return False
 
     def validate_chain():
         return
@@ -195,7 +192,6 @@ class Node:
         # sender_node_info = self.ring.get(sender_public_key) #node information for sender from ring
         # receiver_node_info = self.ring.get(receiver_public_key) #node information for receiver form ring
         
-        print("This is a stake transaction ", str(transaction.stake))
         if(transaction.stake == 'True'):
             self.stake = transaction.amount
             self.ring[transaction.receiver_address][3] += self.ring[transaction.receiver_address][4] #add back old stake amount
@@ -232,8 +228,8 @@ class Node:
             if transaction.type == 1: #message
                 if transaction.receiver_address == self.wallet.address:
                     self.wallet.messages.append(transaction.message)
-                    self.current_block.fees += transaction.fees
-                    print("message transaction added") #testing
+                self.current_block.fees += transaction.fees #maybe need to be stored in ring?
+                print("message transaction added, transaction fees are ", transaction.fees) #testing
 
             if (transaction.type == 2): #stake
                 self.ring[transaction.sender_address][3] += self.ring[transaction.sender_address][4]
@@ -244,9 +240,6 @@ class Node:
             #     return
             
             if (self.current_block.check_and_add_transaction_to_block(transaction) == False): #if current block is at capacity, execute proof of stake and create new block
-                """
-                This is the validate_block function.
-                """
                 sorted_ring = {k: v for k, v in sorted(self.ring.items(), key=lambda item: int(item[1][0]))}
                 for address, values in sorted_ring.items():
                     print(f"ID: {values[0]}, IP: {values[1]}, Port: {values[2]}, BCC: {values[3]}, Stake: {values[4]}")
@@ -255,17 +248,24 @@ class Node:
                 validator = self.select_validator()
                 print("Validator is " + str(validator))
                 self.current_block.validator = validator
+                #if(self.validate_block(self.current_block.previous_hash, validator)):
                 if self.id == validator :
-                    self.broadcast_block(self.current_block.current_hash) 
-                    print("Capacity: " + str(self.current_block.capacity))
-                    self.broadcast_block(self.current_block.capacity) #testing
-                else: 
-                    for address, node_info in sorted_ring.items():
-                        if node_info[0] == validator:
-                            target_address = address
-                    sorted_ring[target_address][3] += self.current_block.fees
+                    self.broadcast_block(self.current_block, self.current_block.validator)
 
-                self.current_block = block.Block(self.current_block.index, self.current_block.validator)# to previous hash tha prostethei otan o validating node kanei broadcast to prohgoumeno block
+                for key, value in self.ring.items():
+                    if value[0] == self.id:
+                        validator_key = key
+                    
+                #self.ring[validator_key][3] += self.current_block.fees SOS
+                # else: 
+                #     for address, node_info in sorted_ring.items():
+                #         if node_info[0] == validator:
+                #             target_address = address
+                #     sorted_ring[target_address][3] += self.current_block.fees
+
+                    #leipei na doume an oloi oi komvoi exoun ton idio validator
+                self.current_block = block.Block(self.current_block.index, self.current_block.validator,previous_hash=self.current_block.previous_hash)
+                self.current_block.current_hash = self.current_block.myHash
                 self.current_block.index+=1
 
     def select_validator(self):
@@ -290,6 +290,7 @@ class Node:
             if current >= threshold:
                 validator = node[0]
                 print("VALIDATOR IS NODE "+str(validator))
+        self.current_validator = validator
         return validator
       
     def view_block(self, block):

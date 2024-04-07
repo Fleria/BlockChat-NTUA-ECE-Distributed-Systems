@@ -94,8 +94,9 @@ def view_block():
     validator = last_block.validator
     index = last_block.index
     for i, transaction in enumerate(transactions_list):
-        block[str(i)] = transaction.message #testing, kanonika thelei transaction.to_dict()
+        block[str(i)] = transaction.message
     return jsonify(block=block,validator=validator, index=index, status=200)
+
 
 # @rest_api.route('/view_block',methods=['GET'] ) #this works for a block
 # def view_block():
@@ -118,7 +119,7 @@ def validate_transaction() :
     # if transaction.verify_signature2(request.form["sender_address"],request.form["transaction_id"],request.form["signature"]): 
     #     print("valid transaction")
     #     return 200
-    
+
 @rest_api.route('/receive_transaction',methods=['POST'])
 def receive_transaction() :
     stake = request.form["stake"]
@@ -127,20 +128,22 @@ def receive_transaction() :
     my_node.add_transaction(trans)
     return (jsonify(),200)
 
-@rest_api.route('/receive_valid_block',methods=['POST'])
+@rest_api.route('/validate_block',methods=['POST'])
 def valid_block():
-    prev_hash=request.form['hash']
-    print("block validated")
+    prev_hash=request.form['previous_hash']
+    validator = request.form['validator']
+    my_node.validate_block(prev_hash, validator)
+    print("block is validated")
     return jsonify(status=200)
 
-
-#app.run(port=5000)
 """
 TO DO :
 -client gia 5-10 nodes
 -main gia 5-10 nodes
--to hash tou block gia validator
+-to hash tou block gia validator ston select_validator den einai auto pou prepei
 -ta stake transactions metrane sto block?
--validate_block
--validate_chain
+-den exoume generate_wallet
+-validate_block: den tsekaroume me kapoio tropo oti oloi oi komvoi exoun idio validator
+-genesis block kai validate_chain
+-mint_block
 """

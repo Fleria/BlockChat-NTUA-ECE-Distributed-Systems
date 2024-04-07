@@ -16,8 +16,8 @@ import time
 import json
 
 class Block:
-    def __init__(self,index,validator):
-        self.previous_hash = None
+    def __init__(self,index,validator,previous_hash=1):
+        self.previous_hash = previous_hash
         self.timestamp = time.time()
         self.validator = validator
         self.index = index 
@@ -29,7 +29,8 @@ class Block:
     def to_dict(self):
         dict = {
             "validator" : self.validator,
-            "transactions_list": self.transactions_list
+            "transactions_list": self.transactions_list,
+            "previous_hash": self.previous_hash
         }
         return dict  
 
@@ -54,6 +55,7 @@ class Block:
         Appends transaction to block, then checks if block reached capacity.
         """
         self.transactions_list.append(transaction)
+        #self.fees += transaction.fees
         for t in self.transactions_list:
             print(t.amount)
         print("transactions list length for this block: " + str(len(self.transactions_list)))
