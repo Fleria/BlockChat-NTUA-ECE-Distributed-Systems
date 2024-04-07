@@ -44,21 +44,31 @@ class Node:
     #     """
     #     return wallet.Wallet()
     
-    def create_transaction(self, receiver_id, message):
+    def create_transaction(self, sender_port, receiver_id, message, stake):
         """
         Creates a transaction object and initialises it, then broadcasts it.
         """
+        if(stake):
+            print("This is a stake transaction")
         print("receiver_id == " , receiver_id)
-        for key in self.ring :
+        for key in self.ring : #every node does this
             print(key, "\n" , self.ring[key],self.ring[key][0]) # kanoume transaction me node id kai 
             if str(self.ring[key][0]) == receiver_id :   # briskoume to node public key edo
                 #print(self.ring[key][0],receiver_id)
                 receiver_address=key    
                 #print("the key we need is ", receiver_address)
-                trans = transaction.Transaction(self.wallet.address, self.nonce, receiver_address, message, self.wallet.private_key)
+                for public_key, node_info in self.ring.items():
+                    _, _, port, _, _ = node_info  # Extract the port number from the node information
+                    if port == sender_port:
+                        sender_public_key = public_key
+                        # Found the node with the matching port number
+                        print("Public key:", public_key)
+                        break
+                trans = transaction.Transaction(sender_public_key, self.nonce, receiver_address, message, self.wallet.private_key)
                 self.nonce += 1
                 trans.nonce = self.nonce
                 trans.sign_transaction(self.wallet.private_key)
+                print("ksekinao na kano broadcast")
                 self.broadcast_transaction(trans)
                 break
              #
@@ -75,7 +85,7 @@ class Node:
         """
         if (transaction.verify_signature() == True):
             print("Signature verified")
-            if (self.wallet.unspent >= transaction.amount):
+            if (self.wallet.unspent >= transaction.amount): #lathos
                 print("Balance is enough")
                 return True
         else:
@@ -87,6 +97,10 @@ class Node:
         Broadcasts the transaction to every registered node in the ring.
         If the transaction is validated by the node, it gets added to the transaction list.
         """
+        target_address = transaction.sender_address
+        for public_key, node_info in self.ring.items():
+            if public_key == target_address:
+                target_port = node_info[2]
         endpoint='/validate_transaction'
         for node in self.ring.values() :
             if node[0]!=self.id :
@@ -96,14 +110,16 @@ class Node:
                 if response.status_code != 200: 
                     print("transaction couldnt be validated")
                     return False
+                else:
+                    print("transaction validated through broadcast")
         endpoint='/receive_transaction'
-        for node in self.ring.values() :
+        for node in self.ring.values() : #ola ta nodes
             if node[0]!=self.id :
                 address = 'http://' + node[1] +':'+ node[2] + endpoint
                 response = requests.post(address,data=transaction.to_dict())
                 if response.status_code != 200:
                     print("node" , node[0], "couldnt receive transaction")
-        print(" successfully broadcast")
+        print(" successfully broadcasted the transaction from node " + str(target_port) + "for all nodes")
         return
                 # if (self.validate_transaction(transaction) == True):
                 #     self.add_transaction(transaction)
@@ -142,13 +158,13 @@ class Node:
         return
 
     def stake(self,amount): 
-        self.create_transaction(0,0,amount,None)
+        self.create_transaction(0,0,amount,True)
         print("Current stake is " + str(self.stake))
 
     # def create_new_block(self):
     #     self.current_block=block.Block(self.current_block.current_hash)
 
-    def add_transaction(self, transaction): 
+    def add_transaction(self, transaction): #tin kalei o kathe komvos
         """
         Adds the transaction to the block. 
         If the current node is either the sender or the receiver, 
@@ -156,18 +172,42 @@ class Node:
         Balances the wallets accordingly.
         Checks if current block is full after adding the transaction.
         """
-        # if transaction.sender_address == self.wallet.address or transaction.receiver_address == self.wallet.address :
-        #     self.wallet.transactions.append(transaction)
-        self.wallet.transactions.append(transaction)
+        target_address = transaction.sender_address
+        for public_key, node_info in self.ring.items():
+            if public_key == target_address:
+                target_port = node_info[2]
+
+        # sender_public_key = transaction.sender_address
+        # receiver_public_key = transaction.receiver_address
+        # sender_node_info = self.ring.get(sender_public_key) #node information for sender from ring
+        # receiver_node_info = self.ring.get(receiver_public_key) #node information for receiver form ring
+
+        if transaction.sender_address == self.wallet.address or transaction.receiver_address == self.wallet.address :
+            # print("I am either the server or the receiver of the trasnaction")
+            # sender_wallet = sender_node_info[4]
+            # sender_wallet.transactions.append(transaction)
+            # sender_wallet.balance -= transaction.amount
+
+            # receiver_wallet = receiver_node_info[4]
+            # receiver_wallet.transactions.append(transaction)
+            # receiver_wallet.balance += transaction.amount
+            #transaction.sender_address.wallet.transactions.append(transaction)
+            #transaction.receiver_address.wallet.transactions.append(transaction)
+            self.wallet.transactions.append(transaction)
+
+        print("sender is", target_port)
         print("old sender amount" ,self.ring[transaction.sender_address][3] )
         self.ring[transaction.sender_address][3] -= (transaction.amount) #subtract the amount from sender, no matter the transaction type
         print("new sender amount" ,self.ring[transaction.sender_address][3] )
+        
         if transaction.type == 0: #coin 
             self.current_block.fees += transaction.fees
-            self.ring[transaction.receiver_address][3] += transaction.amount
+            print("old receiver amount ", str(self.ring[transaction.receiver_address][3]))
+            self.ring[transaction.receiver_address][3] += (transaction.amount - transaction.fees)
+            print("new receiver amount ", str(self.ring[transaction.receiver_address][3]))
             print("coin transaction added") #testing
 
-        if transaction.type == 1: #message 
+        if transaction.type == 1: #message
             if transaction.receiver_address == self.wallet.address:
                 self.wallet.messages.append(transaction.message)
                 self.current_block.fees += transaction.fees

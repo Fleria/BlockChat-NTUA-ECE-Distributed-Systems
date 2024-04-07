@@ -67,8 +67,8 @@ def balance():
 def send_transaction():
     if request.form.get('message') :
         id = request.form['id']
-        print('trans : ',request.form['message'], " to node ", id)
-        my_node.create_transaction(id,request.form['sender'],request.form['message'])
+        print('trans: ',request.form['message'], "from node with port", request.form['sender'], " to node ", id)
+        my_node.create_transaction(request.form['sender'],id,request.form['message'], False)
     # elif request.form.get('amount').isdigit() : #coin
     #     print('coin trans', request.form['message'])
     #     my_node.create_transaction(id,request.form['amount'])
@@ -102,9 +102,12 @@ def view_block():
 @rest_api.route('/validate_transaction',methods=['POST'])
 def validate_transaction() :
     trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["message"],request.form["signature"],request.form["transaction_id"])
-    if trans.verify_signature(): #edo theloume if validate_transaction
+    if (my_node.validate_transaction(trans)):
+    #if trans.verify_signature(): #edo theloume if validate_transaction
         print("Valid transaction")
         return (jsonify(),200)
+    else:
+        return (jsonify(),400)
     # print(trans.to_dict())
     # if transaction.verify_signature2(request.form["sender_address"],request.form["transaction_id"],request.form["signature"]): 
     #     print("valid transaction")
@@ -114,8 +117,7 @@ def validate_transaction() :
 def receive_transaction() :
     trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["message"],request.form["signature"],request.form["transaction_id"])
     my_node.add_transaction(trans)
-    print("successfuly received", trans.to_dict())
-    return jsonify(),200
+    return (jsonify(),200)
 
 @rest_api.route('/receive_valid_block',methods=['POST'])
 def valid_block():
@@ -127,10 +129,9 @@ def valid_block():
 #app.run(port=5000)
 """
 TO DO :
--na tsekaroume oti kanei balance sosta to ipoloipo
 -na tsekaroume stake
 -client gia 5-10 nodes
 -main gia 5-10 nodes
--self.BCC vs wallet.unspent sto ring
--sender id? stin create transaction prepei na to pairnoume apo to port kai to ring
+-to hash tou validator
+-stin api_test grafoume my_node: prepei apo ti main na stelnoume poio node eimaste
 """

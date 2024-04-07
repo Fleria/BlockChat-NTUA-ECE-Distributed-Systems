@@ -87,6 +87,7 @@ class Transaction:
         signature = PKCS1_v1_5.new(key).sign(hash)   
         result = base64.b64encode(signature).decode()
         self.signature = result
+        print("Transaction has been signed")
         #return result
 
     def verify_signature(self):
@@ -104,8 +105,6 @@ class Transaction:
             verify = False
         return verify
     
-    
-        
     def hashTransaction(self):
         """
         Creates hash for the transaction object and assigns it to its id.

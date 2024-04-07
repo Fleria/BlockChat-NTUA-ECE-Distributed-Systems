@@ -2,9 +2,22 @@ import sys
 import requests
 from colorama import init, Fore
 import json
+from argparse import ArgumentParser
+from flask import Flask, jsonify, request, render_template
+#from flask_cors import CORS
+import requests
+import json
+from argparse import ArgumentParser
+import block
+import node
+import blockchain
+import wallet
+import transaction
+from api_test import rest_api, my_node
+
 
 my_ip = 'localhost'
-my_port= '5000'
+#my_port= '5000'
 
 init()
 COLOR_SUCCESS = Fore.GREEN
@@ -33,6 +46,15 @@ Show balance: Τύπωσε το υπόλοιπο του wallet.
 Επεξήγηση των παραπάνω εντολών.
 """
 
+
+parser = ArgumentParser()
+required = parser.add_argument_group()
+required.add_argument('-p',type=str,required=True)
+args=parser.parse_args()
+my_port=args.p
+
+
+print("This is node " + str(my_port))
 print("Enter command or enter <help> to view list of possible commands \n")
 
 help_string = '''
@@ -43,6 +65,7 @@ stake <amount>: set your stake amount \n
 view: print out the transactions of the last validated block of BlockChat and its validator id. \n
 balance: print out your wallet balance. \n
 '''
+
 
 while True:
     try:
