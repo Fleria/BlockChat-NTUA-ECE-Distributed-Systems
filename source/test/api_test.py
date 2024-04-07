@@ -157,7 +157,6 @@ def receive_block():
 """
 TO DO :
 -main gia 5-10 nodes
--to hash tou block gia validator ston select_validator den einai auto pou prepei
 -ta stake transactions metrane sto block?
 -den exoume generate_wallet
 -genesis block kai validate_chain?
