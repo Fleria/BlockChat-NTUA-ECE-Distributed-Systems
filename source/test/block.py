@@ -54,7 +54,6 @@ class Block:
         Appends transaction to block, then checks if block reached capacity.
         """
         self.transactions_list.append(transaction)
-        print("DEBUGGING")
         for t in self.transactions_list:
             print(t.amount)
         print("transactions list length for this block: " + str(len(self.transactions_list)))

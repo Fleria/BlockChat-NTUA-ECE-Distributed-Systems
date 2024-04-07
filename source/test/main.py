@@ -9,6 +9,8 @@ import blockchain
 import wallet
 import transaction
 from api_test import rest_api, my_node
+import sys
+import subprocess
 
 # for i in range(10) :
 #     my_node.create_transaction(i,10+i,'diaroia'+ str(i))
@@ -34,6 +36,7 @@ if __name__ == '__main__':
     required.add_argument('-p',type=str,required=True)
     args=parser.parse_args()
     port=args.p
+    subprocess.Popen(['cmd', '/k', 'python3', 'client.py', '-p', port], creationflags=subprocess.CREATE_NEW_CONSOLE)
     if port == '5000' :#bootstrap node
         print("bootstrap node entered")
         my_node.port=port

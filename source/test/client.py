@@ -17,7 +17,6 @@ from api_test import rest_api, my_node
 
 
 my_ip = 'localhost'
-#my_port= '5000'
 
 init()
 COLOR_SUCCESS = Fore.GREEN
@@ -78,19 +77,22 @@ while True:
             sender = my_port
             endpoint = '/send_transaction'
             address = 'http://' + my_ip + ':' + my_port + endpoint
+            stake_flag = 'False'
             # if message.isdigit():
             #     response = requests.post(address, data={'id': id, 'amount': message})
             # else:
             #     response = requests.post(address, data={'id': id, 'message': message})
-            response = requests.post(address, data={'id': id, 'message': message, 'sender': sender})
+            response = requests.post(address, data={'id': id, 'message': message, 'sender': sender, 'stake_flag': stake_flag})
             print("\n")
         
         elif words[0] == 'stake':
             stake = words[1]
+            stake_flag = 'True'
             endpoint = '/send_transaction'
             address = 'http://' + my_ip + ':' + my_port + endpoint
-            response = requests.post(address, {'stake': stake})
-        
+            response = requests.post(address, {'id': my_port, 'stake': stake, 'stake_flag': stake_flag})
+            print("\n")
+
         elif words[0] == 'view':
             endpoint = '/view_block'
             address = 'http://' + my_ip + ':' + my_port + endpoint

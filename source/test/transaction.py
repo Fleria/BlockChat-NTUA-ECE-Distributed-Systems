@@ -27,7 +27,7 @@ class Transaction:
     """
     Implementation for a transaction between two nodes.
     """
-    def __init__(self, sender_address, nonce, receiver_address, message, signature=None,id=None):
+    def __init__(self, sender_address, nonce, receiver_address, message, signature=None,id=None, stake=False):
         self.transaction_id = id #transaction hash
         self.signature = signature
         self.sender_address = sender_address #sender public key
@@ -37,7 +37,8 @@ class Transaction:
         self.fees = 0
         self.message = message
         self.type = None
-        if self.sender_address==0: #stake
+        self.stake = stake
+        if self.stake == 'True': #stake
             self.type = 2 
             self.amount = int(message)
         else :
@@ -61,7 +62,8 @@ class Transaction:
             "type": self.type,
             "transaction_id" : self.transaction_id,
             "signature" : self.signature,
-            "nonce" : self.nonce
+            "nonce" : self.nonce,
+            "stake" : self.stake
         }
         return dict  
     def to_dict1(self):

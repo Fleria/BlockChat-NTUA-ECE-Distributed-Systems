@@ -6,6 +6,7 @@ import transaction
 import blockchain
 import json
 import block
+from argparse import ArgumentParser
 
 total_nodes=3
 
@@ -13,7 +14,14 @@ rest_api = Blueprint('rest_api', __name__)
 
 # app = Flask(__name__)
 
-my_node = node.Node(bootstrap_addr='localhost',bootstrap_port='5000',ip='localhost')
+parser = ArgumentParser()
+required = parser.add_argument_group()
+required.add_argument('-p',type=str,required=True)
+args=parser.parse_args()
+port=args.p
+
+#my_port = main.port
+my_node = node.Node(bootstrap_addr='localhost',bootstrap_port='5000',ip='localhost',port=port)
 # bc = blockchain.Blockchain()
 
 # block1 = block.Block(1, 69)
@@ -60,22 +68,20 @@ def share_ring():
 
 @rest_api.route('/balance',methods=['GET'])
 def balance():
-    bal = my_node.BCC
+    bal = my_node.balance() #edo prepei na to pairnei apo to ring
     return jsonify({'balance':bal}),200
 
 @rest_api.route('/send_transaction',methods=['POST'])
 def send_transaction():
-    if request.form.get('message') :
+    if request.form.get('stake_flag') == 'False' :
         id = request.form['id']
         print('trans: ',request.form['message'], "from node with port", request.form['sender'], " to node ", id)
         my_node.create_transaction(request.form['sender'],id,request.form['message'], False)
-    # elif request.form.get('amount').isdigit() : #coin
-    #     print('coin trans', request.form['message'])
-    #     my_node.create_transaction(id,request.form['amount'])
-    else : #stake
+        return jsonify(status=200)
+    else: #stake
         print('stake trans')
-        my_node.stake(request.form['stake'])
-    return jsonify(status=200)
+        my_node.stake(request.form['id'], request.form['stake'])
+        return jsonify(status=200)
 
 @rest_api.route('/view_block',methods=['GET'] )
 def view_block():
@@ -115,7 +121,9 @@ def validate_transaction() :
     
 @rest_api.route('/receive_transaction',methods=['POST'])
 def receive_transaction() :
-    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["message"],request.form["signature"],request.form["transaction_id"])
+    stake = request.form["stake"]
+    print("This is a stake transaction ", str(stake))
+    trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["message"],request.form["signature"],request.form["transaction_id"],stake=request.form["stake"])
     my_node.add_transaction(trans)
     return (jsonify(),200)
 
@@ -129,9 +137,10 @@ def valid_block():
 #app.run(port=5000)
 """
 TO DO :
--na tsekaroume stake
 -client gia 5-10 nodes
 -main gia 5-10 nodes
--to hash tou validator
--stin api_test grafoume my_node: prepei apo ti main na stelnoume poio node eimaste
+-to hash tou block gia validator
+-ta stake transactions metrane sto block?
+-validate_block
+-validate_chain
 """
