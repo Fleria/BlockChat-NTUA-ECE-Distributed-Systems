@@ -41,9 +41,10 @@ if __name__ == '__main__':
     required.add_argument('-p',type=str,required=True)
     args=parser.parse_args()
     port=args.p
-    client_process = subprocess.Popen(['cmd', '/k', 'python3', 'client.py', '-p', port], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    #client_process = subprocess.Popen(['cmd', '/k', 'python3', 'client.py', '-p', port], creationflags=subprocess.CREATE_NEW_CONSOLE)
     if port == '5000' :#bootstrap node
         print("bootstrap node entered")
+        my_node.id=0
         my_node.port=port
         my_node.register_node_to_ring(0,'localhost','5000',my_node.wallet.address,1000)
         print("bootstrap node registered")

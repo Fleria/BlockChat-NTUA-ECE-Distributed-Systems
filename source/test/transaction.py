@@ -38,7 +38,7 @@ class Transaction:
         self.message = message
         self.type = None
         self.stake = stake
-        if self.stake == 'True': #stake
+        if self.stake ==  'True': #stake
             self.type = 2 
             self.amount = int(message)
         else :

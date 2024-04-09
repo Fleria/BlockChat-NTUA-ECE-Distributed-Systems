@@ -16,13 +16,13 @@ import time
 import json
 
 class Block:
-    def __init__(self,index,validator,previous_hash=1):
+    def __init__(self,index,previous_hash=1):
         self.previous_hash = previous_hash
         self.timestamp = time.time()
-        self.validator = validator
+        self.validator = None
         self.index = index 
         self.transactions_list = []
-        self.capacity = 1
+        self.capacity = 2
         self.current_hash = None
         self.fees = 0
 
@@ -48,8 +48,8 @@ class Block:
         print(self.timestamp)
         block_dump = json.dumps(hash_message.__str__())
         hash1 = hashlib.sha256(block_dump.encode("ISO-8859-1")).hexdigest()
-        self.current_hash = hash1
-        return int(hash1,16)
+        # self.current_hash = hash1
+        return hash1
     
     def check_and_add_transaction_to_block(self,transaction):
         """

@@ -81,7 +81,8 @@ def send_transaction():
         return jsonify(status=200)
     else: #stake
         print('stake trans')
-        my_node.stake(request.form['id'], request.form['stake'])
+        #my_node.stake()
+        my_node.stake(request.form['id'],request.form['id'], request.form['stake'])
         return jsonify(status=200)
 
 @rest_api.route('/view_block',methods=['GET'] )
@@ -124,42 +125,53 @@ def validate_transaction() :
 @rest_api.route('/receive_transaction',methods=['POST'])
 def receive_transaction() :
     stake = request.form["stake"]
-    print("This is a stake transaction ", str(stake))
+    if stake=='True' : 
+        print("This is a stake transaction ", str(stake))
     trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["message"],request.form["signature"],request.form["transaction_id"],stake=request.form["stake"])
-    my_node.add_transaction(trans)
+    if my_node.add_transaction(trans) == 205 :
+        return jsonify(),205
     return (jsonify(),200)
 
 @rest_api.route('/broadcast_block',methods=['POST'])
-def valid_block():
-    prev_hash=request.form['previous_hash']
-    validator = request.form['validator']
+def broadcast_block():
+    print(" received valid block hash ")
+    prev_hash=request.form['hash']
+    validator = request.form['validator_id']
     print("I received the validator data from node ", validator)
     my_node.validate_block(prev_hash, validator)
     return jsonify(status=200)
 
 @rest_api.route('/receive_block',methods=['POST'])
 def receive_block():
-    #block_hash = request.form['block_hash']
-    #print("block hash ok")
-    #previous_hash=request.form['previous_hash']
-    #print("previous hash okay")
-    my_validator = request.form['my_validator']
-    validator_id = request.form['validator_id']
-    #print("block hash is ", block_hash, " and previous hash is ", previous_hash)
-    #if (validator_id == my_validator and block_hash == previous_hash):
-    if (validator_id == my_validator):
-        print("Block has been validated")
-        return jsonify(status=200)
-    else:
-        print("Block couldn't be validated")
-        abort(400)
+    validator=request.form['validator']
+    hash=request.form['hash']
+    my_node.current_block.current_hash=hash
+    my_node.current_block.validator=validator
+    my_node.blockchain.add_to_blockchain(my_node.current_block)
+    index=my_node.current_block.index+1
+    my_node.current_block=block.Block(index)
+    my_node.current_block.previous_hash=hash
+    print(" valid block in the blockchain with hash \n")
+    return jsonify(),200
 
-"""
-TO DO :
--main gia 5-10 nodes
--ta stake transactions metrane sto block?
--den exoume generate_wallet
--genesis block kai validate_chain?
--dialegoyme panta ton 2 gia validator (mallon exei na kanei me to hash pou leo pano)
--h /receive block den elegxei ta previous hash
-"""
+@rest_api.route('/select_validator', methods=['GET'])
+def select_validator():
+    validator=my_node.select_validator()
+    # my_node.current_block.validator=validator
+    print(" validator is ", validator)
+    return jsonify ({'validator_id':validator}),200
+
+@rest_api.route('/validate_block',methods=['GET'])
+def validate_block():
+    hash=my_node.calculate_block_hash()
+    # my_node.current_block.current_hash=hash
+    return jsonify({'hash':hash}),200
+# """
+# TO DO :
+# -main gia 5-10 nodes
+# -ta stake transactions metrane sto block?
+# -den exoume generate_wallet
+# -genesis block kai validate_chain?
+# -dialegoyme panta ton 2 gia validator (mallon exei na kanei me to hash pou leo pano)
+# -h /receive block den elegxei ta previous hash
+# """
