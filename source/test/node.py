@@ -25,17 +25,26 @@ class Node:
         self.wallet = wallet.Wallet()
         # self.ring = {self.wallet.address : [id, ip, port, self.BCC, stake]} #store information for every node(id, adrdress (ip, port), balance, stake)
         self.ring={}
-        self.current_block = block.Block(1)
+        self.current_block = block.Block(0)
         self.blockchain = blockchain.Blockchain()
         self.bootstrap_addr = bootstrap_addr
         self.bootstrap_port = bootstrap_port
         self.my_stake = 10
         self.message_fees = 0
-        self.current_validator = None
+        self.current_validator = 0
         self.blocklock= Lock()
 
     def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
         self.ring[public_key] = [id, ip, port, balance, self.my_stake]
+        #genesis
+        # for key, value in self.ring.items():
+        #     if value[0]==self.current_validator:
+        #         validator_key = key
+        # print("Appending genesis transaction")
+        # genesis_transaction = transaction.Transaction(0, 0, validator_key, '5000')
+        # self.current_block.transactions_list.append(genesis_transaction)
+        # self.blockchain.blocks_of_blockchain.append(self.current_block)
+        # print("Current length of blockchain is", len(self.blockchain.blocks_of_blockchain))
 
     # def generate_wallet(): 
     #     """

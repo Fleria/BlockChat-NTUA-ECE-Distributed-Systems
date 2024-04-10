@@ -19,7 +19,7 @@ class Block:
     def __init__(self,index,previous_hash=1):
         self.previous_hash = previous_hash
         self.timestamp = time.time()
-        self.validator = None
+        self.validator = 0 #debugging, None
         self.index = index 
         self.transactions_list = []
         self.capacity = 2

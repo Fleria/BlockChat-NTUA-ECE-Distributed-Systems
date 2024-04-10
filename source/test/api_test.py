@@ -9,7 +9,7 @@ import block
 from argparse import ArgumentParser
 from flask import abort
 
-total_nodes=3
+total_nodes=5
 
 rest_api = Blueprint('rest_api', __name__)
 
@@ -60,6 +60,9 @@ def register_to_ring() :
 def share_ring():
     data = json.loads(request.form['ring'])
     my_node.ring=data
+    #my_node.blockchain=blockchain
+    #my_node.current_block=block
+    print("appending genesis block")
     #for node in my_node.ring.values() :
      #   print("now printing ring")
       #  print(node)
@@ -134,9 +137,10 @@ def receive_transaction() :
 
 @rest_api.route('/broadcast_block',methods=['POST'])
 def broadcast_block():
-    print(" received valid block hash ")
     prev_hash=request.form['hash']
+    print(prev_hash)
     validator = request.form['validator_id']
+    print("validator is", validator)
     print("I received the validator data from node ", validator)
     my_node.validate_block(prev_hash, validator)
     return jsonify(status=200)
