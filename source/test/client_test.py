@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 import os
 
 my_ip = 'localhost'
+total_nodes = 5
 
 init()
 COLOR_SUCCESS = Fore.GREEN
@@ -30,11 +31,17 @@ balance: print out your wallet balance. \n
 '''
 
 def read_transactions_from_file(file_path):
+        file_number = int(my_port) - 5000
+        file_name = f"trans{file_number}.txt"
+        file_path = os.path.join('5nodes', file_name)
         with open(file_path, 'r') as file:
             transactions = file.readlines()
+        print("i got the file, it's", file_path)
         return [transaction.strip() for transaction in transactions]
-file_path = os.path.join('5nodes', 'trans0.txt')
-transactions = read_transactions_from_file(file_path)
+
+#print("waiting for file...")
+transactions = read_transactions_from_file(my_port)
+#print("i got the file, it's", file_path)
 
 for action in transactions:
     words = action.split(maxsplit=1)
@@ -64,14 +71,29 @@ for action in transactions:
         try:
             response = requests.get(address)
             if response.status_code == 200:
+                print("The last block in the blockchain:")
                 response_data = response.json()
                 block_data = response_data['block']
-                block_validator = response_data['validator']
-                block_index = response_data['index']
-                print("The block validator is:")
-                print(block_validator)
-                print("And the list of transaction messages for the block are:")
-                print(block_data)
+                block_validator = block_data['Block_validator']
+                block_index = block_data['Block_index']
+                transactions = block_data['List_of_transactions']
+                block_timestamp = block_data['Timestamp']
+                block_capacity = block_data['Capacity']
+                block_fees = block_data['Fees']
+                previous_hash = block_data['Previous_hash']
+            
+                print("-" * 90) 
+                print(f"INDEX: {block_index}")
+                print(f"VALIDATOR: {block_validator}")
+                #print(f"Block created at: {block_timestamp}")
+                print(f"CAPACITY: {block_capacity}")
+                print(f"BLOCK FEES: {block_fees}")
+                #print(f"PREVIOUS HASH: {previous_hash}")
+                print("TRANSACTIONS:")
+                for i, transaction in enumerate(transactions, start=1):
+                    print(f"    {i}. {transaction}")
+                print("-" * 90)
+                print("\n")
         except:
             print("No valid block yet!")
     
@@ -82,4 +104,9 @@ for action in transactions:
         data = response.json()
         print('Node balance:', data['balance'])
 
-transaction_file.close()
+    elif words[0] == 'help':
+        print(help_string)
+
+    elif words[0] == 'exit':
+        print("Goodbye")
+        sys.exit(0)
