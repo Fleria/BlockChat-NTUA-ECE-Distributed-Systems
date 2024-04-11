@@ -9,7 +9,7 @@ import block
 from argparse import ArgumentParser
 from flask import abort
 
-total_nodes=3
+total_nodes=5
 
 rest_api = Blueprint('rest_api', __name__)
 
@@ -84,12 +84,16 @@ def send_transaction():
     if request.form.get('stake_flag') == 'False' :
         id = request.form['id']
         print('I am sending a trans: ',request.form['message'], "from node with port", request.form['sender'], " to node ", id)
-        my_node.create_transaction(request.form['sender'],id,request.form['message'], False)
-        return jsonify(status=200)
+        if my_node.create_transaction(request.form['sender'],id,request.form['message'], False) :
+            return jsonify(),200
+        else :
+            return jsonify(),400
     else: #stake
         print('Stake trans')
-        my_node.stake(request.form['id'],request.form['id'], request.form['stake'])
-        return jsonify(status=200)
+        if my_node.stake(request.form['id'],request.form['id'], request.form['stake']):
+            return jsonify(),200
+        else :
+            return jsonify(),400
 
 @rest_api.route('/view_block', methods=['GET'])
 def view_block():
@@ -198,3 +202,8 @@ def select_validator():
 def validate_block():
     hash=my_node.calculate_block_hash()
     return jsonify({'hash':hash}),200
+
+@rest_api.route('/blockchain_length',methods=['GET'])
+def blockchain_length():
+    length = len(my_node.blockchain.blocks_of_blockchain)
+    return jsonify({'blocks':length}),200

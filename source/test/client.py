@@ -83,6 +83,8 @@ while True:
             # else:
             #     response = requests.post(address, data={'id': id, 'message': message})
             response = requests.post(address, data={'id': id, 'message': message, 'sender': sender, 'stake_flag': stake_flag})
+            if response.status_code==400 :
+                print("invalid transaction")
             print("\n")
         
         elif words[0] == 'stake':
@@ -132,13 +134,20 @@ while True:
             data = response.json()
             print('Node balance:', data['balance'])
             print("\n")
-        
+
+        elif words[0] == 'length':
+            endpoint = '/blockchain_length'
+            address = 'http://' + my_ip + ':' + my_port + endpoint
+            response = requests.get(address)
+            data = response.json()
+            print(" the blockchain has ", data['blocks'] , " length\n")
         elif words[0] == 'help':
             print(help_string)
         
         elif words[0] == 'exit':
             print("Goodbye")
             sys.exit(0)
+
     
     except KeyboardInterrupt:
         print("Goodbye")

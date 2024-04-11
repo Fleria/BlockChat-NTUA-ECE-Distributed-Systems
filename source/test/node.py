@@ -61,7 +61,7 @@ class Node:
                             break
                     trans = transaction.Transaction(sender_public_key, self.nonce, receiver_address, message, stake=True)
                     trans.sign_transaction(self.wallet.private_key)
-                    self.broadcast_transaction(trans)
+                    return self.broadcast_transaction(trans)
                     break    
 
             #print("This is a stake transaction")
@@ -84,7 +84,7 @@ class Node:
                     self.nonce += 1
                     trans.nonce = self.nonce
                     trans.sign_transaction(self.wallet.private_key)
-                    self.broadcast_transaction(trans)
+                    return self.broadcast_transaction(trans)
                     break
                     
     def validate_transaction(self, transaction): 
@@ -130,6 +130,7 @@ class Node:
                 responses.append(response.status_code)
         if responses[0] >=400 :
             print("Mode couldn't receive transaction ")
+            return False
         if responses[0] == 205: #block is full
             validators=[]
             endpoint='/select_validator'
@@ -147,6 +148,9 @@ class Node:
                     address = 'http://' + node[1] +':'+ node[2] + endpoint
                     response=requests.get(address)
                     hash=response.json()['hash']
+                    for key,info in self.ring.items() :
+                        if info[0]==validator:
+                            self.ring[key][3]+=self.current_block.fees
                     #print('Calculated block hash as ' , hash)
                     for node in self.ring.values():
                         endpoint='/receive_block'
@@ -155,7 +159,7 @@ class Node:
                         if response.status_code==200 :
                             print("Block successfuly validated")
         print(" successfully broadcasted the transaction from node " + str(target_port) + " for all nodes"+"\n")
-        return
+        return True
 
     def broadcast_block(self, hash,  validator_id):
         """
