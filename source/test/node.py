@@ -34,17 +34,8 @@ class Node:
         self.current_validator = 0
         self.blocklock= Lock()
 
-    def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap #adam
+    def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap 
         self.ring[public_key] = [id, ip, port, balance, self.my_stake]
-        #genesis
-        # for key, value in self.ring.items():
-        #     if value[0]==self.current_validator:
-        #         validator_key = key
-        # print("Appending genesis transaction")
-        # genesis_transaction = transaction.Transaction(0, 0, validator_key, '5000')
-        # self.current_block.transactions_list.append(genesis_transaction)
-        # self.blockchain.blocks_of_blockchain.append(self.current_block)
-        # print("Current length of blockchain is", len(self.blockchain.blocks_of_blockchain))
 
     # def generate_wallet(): 
     #     """
@@ -56,9 +47,9 @@ class Node:
         """
         Creates a transaction object and initialises it, then broadcasts it.
         """
-        print("receiver_id == " , receiver_id)
+        #print("receiver_id == " , receiver_id)
         if(stake==True):
-            print("Creating transaction with stake!")
+            #print("Creating transaction with stake!")
             for key in self.ring :
                 if str(self.ring[key][2]) == receiver_id :
                     receiver_address=key
@@ -66,19 +57,19 @@ class Node:
                         _, _, port, _, _ = node_info
                         if port == sender_port:
                             sender_public_key = public_key
-                            print("stake transaction sender ",sender_public_key)
+                            #print("stake transaction sender ",sender_public_key)
                             break
                     trans = transaction.Transaction(sender_public_key, self.nonce, receiver_address, message, stake=True)
                     trans.sign_transaction(self.wallet.private_key)
                     self.broadcast_transaction(trans)
                     break    
 
-            print("This is a stake transaction")
+            #print("This is a stake transaction")
 
         else:
             for key in self.ring : #every node does this
-                print(key, "\n" , self.ring[key],self.ring[key][0]) # kanoume transaction me node id kai 
-                if str(self.ring[key][0]) == receiver_id :   # briskoume to node public key edo
+                #print(key, "\n" , self.ring[key],self.ring[key][0]) # transaction made node id
+                if str(self.ring[key][0]) == receiver_id :  # match to node public key
                     #print(self.ring[key][0],receiver_id)
                     receiver_address=key    
                     #print("the key we need is ", receiver_address)
@@ -87,21 +78,14 @@ class Node:
                         if port == sender_port:
                             sender_public_key = public_key
                             # Found the node with the matching port number
-                            print("Public key:", public_key)
+                            #print("Public key:", public_key)
                             break
                     trans = transaction.Transaction(sender_public_key, self.nonce, receiver_address, message)
                     self.nonce += 1
                     trans.nonce = self.nonce
                     trans.sign_transaction(self.wallet.private_key)
-                    print("ksekinao na kano broadcast")
                     self.broadcast_transaction(trans)
                     break
-             #
-         #transaction nonce is current node nonce
-        #self.current_block.check_and_add_transaction_to_block(trans)
-        # trans.hashTransaction()
-        # trans.sign_transaction(self.wallet.private_key)
-        # self.broadcast_transaction(trans)
                     
     def validate_transaction(self, transaction): 
         """
@@ -130,13 +114,13 @@ class Node:
         for node in self.ring.values() :
             #if node[0]!=self.id :
                 address = 'http://' + node[1] +':'+ node[2] + endpoint
-                print("sending transaction to ", address)
+                print("Now sending transaction to ", address)
                 response = requests.post(address, data=transaction.to_dict())
                 if response.status_code != 200: 
-                    print("transaction couldnt be validated")
+                    print("Transaction couldn't be validated")
                     return False
                 else:
-                    print("transaction validated through broadcast")
+                    print("Transaction validated through broadcast")
         endpoint='/receive_transaction'
         responses=[]
         for node in self.ring.values() : #ola ta nodes
@@ -145,8 +129,8 @@ class Node:
                 response = requests.post(address, data=transaction.to_dict())
                 responses.append(response.status_code)
         if responses[0] >=400 :
-            print("node couldnt receive transaction ")
-        if responses[0] == 205:
+            print("Mode couldn't receive transaction ")
+        if responses[0] == 205: #block is full
             validators=[]
             endpoint='/select_validator'
             for node in self.ring.values() :
@@ -163,14 +147,14 @@ class Node:
                     address = 'http://' + node[1] +':'+ node[2] + endpoint
                     response=requests.get(address)
                     hash=response.json()['hash']
-                    print('calculated block hash as ' , hash)
+                    #print('Calculated block hash as ' , hash)
                     for node in self.ring.values():
                         endpoint='/receive_block'
                         address = 'http://' + node[1] +':'+ node[2] + endpoint
                         response=requests.post(address,{'hash':hash,'validator':validator})
                         if response.status_code==200 :
-                            print(" block successfuly validated")
-        print(" successfully broadcasted the transaction from node " + str(target_port) + "for all nodes")
+                            print("Block successfuly validated")
+        print(" successfully broadcasted the transaction from node " + str(target_port) + " for all nodes"+"\n")
         return
 
     def broadcast_block(self, hash,  validator_id):
@@ -186,44 +170,22 @@ class Node:
         return
     
     def validate_block(self,hash,validator_id):
+        """
+        Enters the correct information for the full block and validates it.
+        """
         self.blockchain.blocks_of_blockchain[-1].current_hash=hash
         self.blockchain.blocks_of_blockchain[-1].validator=validator_id
         self.current_block.previous_hash=hash
 
-
-    # def validate_block(self, block_hash, validator_id):
-    #     """
-    #     Αυτή η συνάρτηση καλείται από τους nodes κατά τη λήψη ενός νέου block (εκτός του genesis block).
-    #     Επαληθεύεται ότι (a) ο validator είναι πράγματι ο σωστός (αυτός που υπέδειξε η κλήση της
-    #     ψευδοτυχαίας γεννήτριας) και ότι (b) το πεδίο previous_hash ισούται πράγματι με το hash του
-    #     προηγούμενου block.
-    #     """
-    #     endpoint = '/receive_block'
-    #     for node in self.ring.values() :   
-    #         print("mpika sto loop tis validate_block")
-    #         #previous_hash = self.blockchain.blocks_of_blockchain[-1].previous_hash
-    #         #print("block hash by validator is ", block_hash, " and previous hash is ", previous_hash)
-    #         address = 'http://' + node[1] +':'+ node[2] + endpoint
-    #         response = requests.post(address,{'block_hash': block_hash, 'validator_id': validator_id, 'my_validator': self.select_validator()})       
-    #     return
-
-
-    def validate_chain():
-        return
-
     def stake(self,sender,id,amount): 
-        print("stake amount is ", amount)
-        self.create_transaction(sender,id,amount,True) #auto einai to node t 1 r
-        #prepei na to allazoume sto ring
+        #print("stake amount is ", amount)
+        self.create_transaction(sender,id,amount,True)
         return
-
-    # def create_new_block(self):
-    #     self.current_block=block.Block(self.current_block.current_hash)
 
     def calculate_block_hash(self) :
         return self.current_block.myHash()
 
-    def add_transaction(self, transaction): #tin kalei o kathe komvos
+    def add_transaction(self, transaction): #tevery node calls
         """
         Adds the transaction to the block. 
         If the current node is either the sender or the receiver, 
@@ -235,18 +197,13 @@ class Node:
         for public_key, node_info in self.ring.items():
             if public_key == target_address:
                 target_port = node_info[2]
-
-        # sender_public_key = transaction.sender_address
-        # receiver_public_key = transaction.receiver_address
-        # sender_node_info = self.ring.get(sender_public_key) #node information for sender from ring
-        # receiver_node_info = self.ring.get(receiver_public_key) #node information for receiver form ring
         
         if(transaction.stake == 'True'):
             self.my_stake = transaction.amount
             self.ring[transaction.receiver_address][3] += self.ring[transaction.receiver_address][4] #add back old stake amount
             self.ring[transaction.receiver_address][3] -= (transaction.amount)
             self.ring[transaction.receiver_address][4] = transaction.amount
-            print("new stake is ", self.ring[transaction.receiver_address][4])
+            print("New stake is ", self.ring[transaction.receiver_address][4])
         
         else:
             if transaction.sender_address == self.wallet.address or transaction.receiver_address == self.wallet.address :
@@ -262,75 +219,72 @@ class Node:
                 #transaction.receiver_address.wallet.transactions.append(transaction)
                 self.wallet.transactions.append(transaction)
 
-            print("sender is", target_port)
-            print("old sender amount" ,self.ring[transaction.sender_address][3] )
+            print("Sender is", target_port)
+            print("Old sender amount" ,self.ring[transaction.sender_address][3] )
             self.ring[transaction.sender_address][3] -= (transaction.amount) #subtract the amount from sender, no matter the transaction type
-            print("new sender amount" ,self.ring[transaction.sender_address][3] )
+            print("New sender amount" ,self.ring[transaction.sender_address][3] )
             
             if transaction.type == 0: #coin 
                 self.current_block.fees += transaction.fees
-                print("old receiver amount ", str(self.ring[transaction.receiver_address][3]))
+                print("Old receiver amount ", str(self.ring[transaction.receiver_address][3]))
                 self.ring[transaction.receiver_address][3] += (transaction.amount - transaction.fees)
-                print("new receiver amount ", str(self.ring[transaction.receiver_address][3]))
-                print("coin transaction added") #testing
+                print("New receiver amount ", str(self.ring[transaction.receiver_address][3]))
+                print("Coin transaction added") #testing
 
             if transaction.type == 1: #message
                 if transaction.receiver_address == self.wallet.address:
                     self.wallet.messages.append(transaction.message)
                 self.current_block.fees += transaction.fees #maybe need to be stored in ring?
-                print("message transaction added, transaction fees are ", transaction.fees) #testing
+                print("Message transaction added, transaction fees are ", transaction.fees) #testing
 
             if (transaction.type == 2): #stake
                 self.ring[transaction.sender_address][3] += self.ring[transaction.sender_address][4]
                 self.ring[transaction.sender_address][4] = transaction.amount
-                print("stake transaction added") #testing
-
-            # if (self.current_block.check_and_add_transaction_to_block(transaction) == True): #testing
-            #     return
+                print("Stake transaction added") #testing
             
             if self.current_block.check_and_add_transaction_to_block(transaction) == False :
                 return 205 #if current block is at capacity, execute proof of stake and create new block
-                print("locking the the blocklock")
-                self.blocklock.acquire()
-                sorted_ring = {k: v for k, v in sorted(self.ring.items(), key=lambda item: int(item[1][0]))}
-                for address, values in sorted_ring.items():
-                    print(f"ID: {values[0]}, IP: {values[1]}, Port: {values[2]}, BCC: {values[3]}, Stake: {values[4]}")
-                self.blockchain.add_to_blockchain(self.current_block)
-                index = self.current_block.index
-                # print("Current length of blockchain is: " + str(len(self.blockchain.blocks_of_blockchain))) #testing
-                validator = self.select_validator()
-                print("Validator is " + str(validator))
-                self.current_block.validator = validator
-                """
-                This continues the mint_block function.
-                """
-                #if(self.validate_block(self.current_block.previous_hash, validator)):
-                if str(self.id) == str(validator) :
-                    print(" im node ",self.id, " the validator")
-                    hash = self.calculate_block_hash()
-                    print( "block has is ", hash)
-                    self.broadcast_block(hash, validator)
+                # print("locking the the blocklock")
+                # self.blocklock.acquire()
+                # sorted_ring = {k: v for k, v in sorted(self.ring.items(), key=lambda item: int(item[1][0]))}
+                # for address, values in sorted_ring.items():
+                #     print(f"ID: {values[0]}, IP: {values[1]}, Port: {values[2]}, BCC: {values[3]}, Stake: {values[4]}")
+                # self.blockchain.add_to_blockchain(self.current_block)
+                # index = self.current_block.index
+                # # print("Current length of blockchain is: " + str(len(self.blockchain.blocks_of_blockchain))) #testing
+                # validator = self.select_validator()
+                # print("Validator is " + str(validator))
+                # self.current_block.validator = validator
+                # """
+                # This continues the mint_block function.
+                # """
+                # #if(self.validate_block(self.current_block.previous_hash, validator)):
+                # if str(self.id) == str(validator) :
+                #     print(" im node ",self.id, " the validator")
+                #     hash = self.calculate_block_hash()
+                #     print( "block has is ", hash)
+                #     self.broadcast_block(hash, validator)
 
-                    # for key, value in self.ring.items():
-                    #     if value[0] == self.id:
-                    #         validator_key = key
+                #     # for key, value in self.ring.items():
+                #     #     if value[0] == self.id:
+                #     #         validator_key = key
                     
-                    # self.ring[validator_key][3] += self.current_block.fees 
-                # else: 
-                #     for address, node_info in sorted_ring.items():
-                #         if node_info[0] == validator:
-                #             target_address = address
-                #     sorted_ring[target_address][3] += self.current_block.fees
-                for key, value in self.ring.items():
-                        if value[0] == validator:
-                            validator_key = key
+                #     # self.ring[validator_key][3] += self.current_block.fees 
+                # # else: 
+                # #     for address, node_info in sorted_ring.items():
+                # #         if node_info[0] == validator:
+                # #             target_address = address
+                # #     sorted_ring[target_address][3] += self.current_block.fees
+                # for key, value in self.ring.items():
+                #         if value[0] == validator:
+                #             validator_key = key
                     
-                self.ring[validator_key][3] += self.current_block.fees
-                self.current_block = block.Block(index,validator)
+                # self.ring[validator_key][3] += self.current_block.fees
+                # self.current_block = block.Block(index,validator)
 
-                # self.current_block.current_hash = self.current_block.myHash
-                self.current_block.index+=1
-                self.blocklock.release()
+                # # self.current_block.current_hash = self.current_block.myHash
+                # self.current_block.index+=1
+                # self.blocklock.release()
 
     def select_validator(self):
         """
@@ -341,20 +295,20 @@ class Node:
         This is the mint_block function.
         """
         sorted_ring = {k: v for k, v in sorted(self.ring.items(), key=lambda item: int(item[1][0]))}
-        print("the seed for the random generator is ", self.current_block.previous_hash)
-        random.seed(self.current_block.previous_hash) 
+        print("The seed for the random generator is ", self.current_block.previous_hash)
+        random.seed(int(self.current_block.previous_hash) )
         total_stakes = sum(amount[4] for amount in sorted_ring.values())
         threshold = random.uniform(0, total_stakes)
         print("Threshold is "+str(threshold))
         current = 0
         for node in sorted_ring.values():
-            # print("my id is "+str(node[0]))
+            print("My id is "+str(node[0]))
             node_index = int(node[4])
             current += node_index
-            # print(current)
+            print(current)
             if current >= threshold:
                 validator = node[0]
-                # print("VALIDATOR IS NODE "+str(validator))
+                print("VALIDATOR IS NODE "+str(validator))
                 break
         self.current_validator = validator
         return validator

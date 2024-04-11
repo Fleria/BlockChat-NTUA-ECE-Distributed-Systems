@@ -105,8 +105,6 @@ while True:
                     block_index = response_data['index']
                     print("The block validator is:")
                     print(block_validator)
-                    # print("And current block index is:")
-                    # print(block_index)
                     print("And the list of transaction messages for the block are:")
                     print(block_data)
                     print("\n")

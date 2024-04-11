@@ -13,25 +13,14 @@ total_nodes=5
 
 rest_api = Blueprint('rest_api', __name__)
 
-# app = Flask(__name__)
-
 parser = ArgumentParser()
 required = parser.add_argument_group()
 required.add_argument('-p',type=str,required=True)
 args=parser.parse_args()
 port=args.p
 
-#my_port = main.port
+
 my_node = node.Node(bootstrap_addr='localhost',bootstrap_port='5000',ip='localhost',port=port)
-# bc = blockchain.Blockchain()
-
-# block1 = block.Block(1, 69)
-# block1.transactions_list = ["first"]
-# block2 = block.Block(2, 420)
-# block2.transactions_list = ["second", "third"]
-
-# bc.add_to_blockchain(block1)
-# bc.add_to_blockchain(block2)
 
 
 @rest_api.route('/register_to_ring', methods=['POST'])
@@ -39,18 +28,20 @@ def register_to_ring() :
     key = request.form["public_key"]
     address = request.form["address"]
     port = request.form["port"]
+    genesis_transaction = request.form["genesis_transaction"]
     id = len(my_node.ring)
-    print("register node with address", address, port, "to ring of len" , id+1)
+    print("Registering node with address", address, port, "to ring of length" , id+1)
     my_node.register_node_to_ring(id,address,port,key,1000)
+    my_node.ring[my_node.wallet.public_key][3] -= 1000
 
-    if id == total_nodes-1 :
+    if id == total_nodes-1 : #finished with node adding
         for node in my_node.ring.values() :
             if node[0] !=0 and node[0]!=total_nodes-1 : #not bootstrap or final node
                 url="http://"+ node[1] + ':'+node[2] +'/share_ring'
-                data = {'ring': json.dumps(my_node.ring)}
+                data = {'ring': json.dumps(my_node.ring), 'genesis_transaction':json.dumps(genesis_transaction)}
                 response = requests.post(url, data = data)
-                if(response.status_code == 200) :
-                    print("successful ring sharing for node ", id)
+                #if(response.status_code == 200) :
+                    #print("successful ring sharing for node ", node[0])
         return jsonify({'id': id, 'ring':my_node.ring}),200
     else : 
         return jsonify({'id':id}),200
@@ -60,31 +51,25 @@ def register_to_ring() :
 def share_ring():
     data = json.loads(request.form['ring'])
     my_node.ring=data
-    #my_node.blockchain=blockchain
-    #my_node.current_block=block
-    print("appending genesis block")
-    #for node in my_node.ring.values() :
-     #   print("now printing ring")
-      #  print(node)
-    #print(my_node.ring)
-    return jsonify(),200
-
+    url="http://localhost:"+my_node.port +'/receive_block'
+    response=requests.post(url,{'hash':1,'validator':0})
+    if response.status_code==200 :
+        return jsonify(),200
 
 @rest_api.route('/balance',methods=['GET'])
 def balance():
-    bal = my_node.balance() #edo prepei na to pairnei apo to ring
+    bal = my_node.balance()
     return jsonify({'balance':bal}),200
 
 @rest_api.route('/send_transaction',methods=['POST'])
 def send_transaction():
     if request.form.get('stake_flag') == 'False' :
         id = request.form['id']
-        print('trans: ',request.form['message'], "from node with port", request.form['sender'], " to node ", id)
+        print('I am sending a trans: ',request.form['message'], "from node with port", request.form['sender'], " to node ", id)
         my_node.create_transaction(request.form['sender'],id,request.form['message'], False)
         return jsonify(status=200)
     else: #stake
-        print('stake trans')
-        #my_node.stake()
+        print('Stake trans')
         my_node.stake(request.form['id'],request.form['id'], request.form['stake'])
         return jsonify(status=200)
 
@@ -102,34 +87,20 @@ def view_block():
         block[str(i)] = transaction.message
     return jsonify(block=block,validator=validator, index=index, status=200)
 
-
-# @rest_api.route('/view_block',methods=['GET'] ) #this works for a block
-# def view_block():
-#     #counter = 0
-#     #block = {}
-#     block = my_node.current_block.to_dict()
-#     print(block)
-#     return jsonify(status=200)
-
 @rest_api.route('/validate_transaction',methods=['POST'])
 def validate_transaction() :
     trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["message"],request.form["signature"],request.form["transaction_id"])
     if (my_node.validate_transaction(trans)):
-    #if trans.verify_signature(): #edo theloume if validate_transaction
         print("Valid transaction")
         return (jsonify(),200)
     else:
         return (jsonify(),400)
-    # print(trans.to_dict())
-    # if transaction.verify_signature2(request.form["sender_address"],request.form["transaction_id"],request.form["signature"]): 
-    #     print("valid transaction")
-    #     return 200
 
 @rest_api.route('/receive_transaction',methods=['POST'])
 def receive_transaction() :
     stake = request.form["stake"]
     if stake=='True' : 
-        print("This is a stake transaction ", str(stake))
+        print("This is a stake transaction ")
     trans = transaction.Transaction(request.form["sender_address"],request.form["nonce"],request.form["receiver_address"],request.form["message"],request.form["signature"],request.form["transaction_id"],stake=request.form["stake"])
     if my_node.add_transaction(trans) == 205 :
         return jsonify(),205
@@ -138,9 +109,9 @@ def receive_transaction() :
 @rest_api.route('/broadcast_block',methods=['POST'])
 def broadcast_block():
     prev_hash=request.form['hash']
-    print(prev_hash)
+    #print(prev_hash)
     validator = request.form['validator_id']
-    print("validator is", validator)
+    #print("validator is", validator)
     print("I received the validator data from node ", validator)
     my_node.validate_block(prev_hash, validator)
     return jsonify(status=200)
@@ -155,27 +126,16 @@ def receive_block():
     index=my_node.current_block.index+1
     my_node.current_block=block.Block(index)
     my_node.current_block.previous_hash=hash
-    print(" valid block in the blockchain with hash \n")
+    print("Valid block in the blockchain")
     return jsonify(),200
 
 @rest_api.route('/select_validator', methods=['GET'])
 def select_validator():
     validator=my_node.select_validator()
-    # my_node.current_block.validator=validator
-    print(" validator is ", validator)
+    print("The validator is ", validator)
     return jsonify ({'validator_id':validator}),200
 
 @rest_api.route('/validate_block',methods=['GET'])
 def validate_block():
     hash=my_node.calculate_block_hash()
-    # my_node.current_block.current_hash=hash
     return jsonify({'hash':hash}),200
-# """
-# TO DO :
-# -main gia 5-10 nodes
-# -ta stake transactions metrane sto block?
-# -den exoume generate_wallet
-# -genesis block kai validate_chain?
-# -dialegoyme panta ton 2 gia validator (mallon exei na kanei me to hash pou leo pano)
-# -h /receive block den elegxei ta previous hash
-# """

@@ -44,11 +44,8 @@ class Block:
         'index': self.index,
         'transactions_list': self.transactions_list
         }
-        print("timestamp is")
-        print(self.timestamp)
         block_dump = json.dumps(hash_message.__str__())
         hash1 = hashlib.sha256(block_dump.encode("ISO-8859-1")).hexdigest()
-        # self.current_hash = hash1
         return hash1
     
     def check_and_add_transaction_to_block(self,transaction):
@@ -56,13 +53,11 @@ class Block:
         Appends transaction to block, then checks if block reached capacity.
         """
         self.transactions_list.append(transaction)
-        #self.fees += transaction.fees
-        for t in self.transactions_list:
-            print(t.amount)
-        print("transactions list length for this block: " + str(len(self.transactions_list)))
+        #for t in self.transactions_list:
+        #    print(t.amount)
         if self.capacity > len(self.transactions_list):
-            print("NOT AT CAPACITY")
+            print("Block is not at capacity yet")
             return True
         else:
-            print("Block is at capacityyyyyyyyy !!!")
+            print("Block is at capacity !")
             return False

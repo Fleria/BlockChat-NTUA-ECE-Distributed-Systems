@@ -14,6 +14,4 @@ class Blockchain:
         Adds block to blockchain.
         """
         self.blocks_of_blockchain.append(block)
-        self.length += 1 
-        #for block in self.blocks_of_blockchain:
-            #print(block.transactions_list)
+        self.length += 1

@@ -6,23 +6,6 @@ from Crypto.Signature import PKCS1_v1_5
 import base64
 import json
 
-# def verify_signature2(sender_address,trans_id,signature):
-#         """
-#         Verifies the signature of the transaction using the sender's public key.
-#         Returns True or False accordingly.
-#         """
-#         public_key = RSA.import_key(sender_address)
-#         signature = base64.b64decode(signature)
-#         h = trans_id
-#         verifier = PKCS1_v1_5.new(public_key)
-#         if verifier.verify(h, signature): 
-#             print("Transaction signature is valid")
-#             verify = True
-#         else:
-#             print("Transaction signature is not valid")
-#             verify = False
-#         return verify
-
 class Transaction:
     """
     Implementation for a transaction between two nodes.
@@ -44,7 +27,7 @@ class Transaction:
         else :
             if (self.message.isdigit()): #coin transaction
                 self.type = 0
-                print("Value is "+str(int(message)))
+                #print("Value is "+str(int(message)))
                 self.fees = int(message)*0.03
                 self.amount = int(message) + self.fees
             else: #message transaction
@@ -66,6 +49,7 @@ class Transaction:
             "stake" : self.stake
         }
         return dict  
+    
     def to_dict1(self):
         dict = {
             "sender_address": self.sender_address,
@@ -112,8 +96,7 @@ class Transaction:
         Creates hash for the transaction object and assigns it to its id.
         """
         hash_message = self.to_dict()
-        block_dump = json.dumps(hash_message.__str__()) #to kanoume json
-        #print(block_dump)
+        block_dump = json.dumps(hash_message.__str__())
         hash = SHA256.new(block_dump.encode("ISO-8859-1")).hexdigest()
         self.transaction_id = hash
         return hash
