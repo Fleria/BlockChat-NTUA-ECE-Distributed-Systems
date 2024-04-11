@@ -12,9 +12,8 @@ from api_test import rest_api, my_node
 app = Flask(__name__)
 app.register_blueprint(rest_api)
 
-genesis_transaction = transaction.Transaction(0, 0, 0, '5000')
 
-total_nodes = 5
+total_nodes = 3
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -29,11 +28,13 @@ if __name__ == '__main__':
         my_node.register_node_to_ring(0,'localhost','5000',my_node.wallet.address,1000*total_nodes)
         print("bootstrap node registered")
         #genesis
+        genesis_transaction = transaction.Transaction(0, 0, 0, '5000')
         my_node.current_block.transactions_list.append(genesis_transaction)
+        hash=my_node.current_block.myHash()
+        my_node.current_block.current_hash=hash
         my_node.blockchain.blocks_of_blockchain.append(my_node.current_block)
         print("Current length of blockchain is", len(my_node.blockchain.blocks_of_blockchain))
-        my_node.current_block = block.Block(1)
-        
+        my_node.current_block = block.Block(1,hash)
         app.run(port=port)
 
     else: #other nodes
@@ -44,7 +45,6 @@ if __name__ == '__main__':
                 'public_key':my_node.wallet.address,
                 'address':'localhost',
                 'port':port,
-                'genesis_transaction': genesis_transaction,
                 }
         response = requests.post(endpoint,info)
         res = response.json()
@@ -52,9 +52,9 @@ if __name__ == '__main__':
         print("node registered with id ", my_node.id)
         if 'ring' in res : #the last node to enter
             my_node.ring=res['ring']
-            my_node.current_block.transactions_list.append(genesis_transaction)
-            my_node.blockchain.blocks_of_blockchain.append(my_node.current_block)
-            print("the length of my genesis block is", len(my_node.current_block.transactions_list))
-            my_node.current_block = block.Block(1)
+            # my_node.current_block.transactions_list.append(genesis_transaction)
+            # my_node.blockchain.blocks_of_blockchain.append(my_node.current_block)
+            # print("the length of my genesis block is", len(my_node.current_block.transactions_list))
+            # my_node.current_block = block.Block(1)
         
         app.run(port=port)

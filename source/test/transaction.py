@@ -25,16 +25,19 @@ class Transaction:
             self.type = 2 
             self.amount = int(message)
         else :
-            if (self.message.isdigit()): #coin transaction
-                self.type = 0
-                #print("Value is "+str(int(message)))
-                self.fees = int(message)*0.03
-                self.amount = int(message) + self.fees
-            else: #message transaction
-                self.type = 1
-                self.message = message
-                self.amount = len(message)
-                self.fees = self.amount
+            if sender_address==0 and receiver_address== 0 : #genessis block
+                self.amount=int(message)
+            else:
+                if (self.message.isdigit()): #coin transaction
+                    self.type = 0
+                    #print("Value is "+str(int(message)))
+                    self.fees = int(message)*0.03
+                    self.amount = int(message) + self.fees
+                else: #message transaction
+                    self.type = 1
+                    self.message = message
+                    self.amount = len(message)
+                    self.fees = self.amount
         
     def to_dict(self):
         dict = {

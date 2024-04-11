@@ -9,7 +9,7 @@ import block
 from argparse import ArgumentParser
 from flask import abort
 
-total_nodes=5
+total_nodes=3
 
 rest_api = Blueprint('rest_api', __name__)
 
@@ -28,7 +28,7 @@ def register_to_ring() :
     key = request.form["public_key"]
     address = request.form["address"]
     port = request.form["port"]
-    genesis_transaction = request.form["genesis_transaction"]
+    #genesis_transaction = request.form["genesis_transaction"]
     id = len(my_node.ring)
     print("Registering node with address", address, port, "to ring of length" , id+1)
     my_node.register_node_to_ring(id,address,port,key,1000)
@@ -38,23 +38,38 @@ def register_to_ring() :
         for node in my_node.ring.values() :
             if node[0] !=0 and node[0]!=total_nodes-1 : #not bootstrap or final node
                 url="http://"+ node[1] + ':'+node[2] +'/share_ring'
-                data = {'ring': json.dumps(my_node.ring), 'genesis_transaction':json.dumps(genesis_transaction)}
+                blockchain=json.dumps(my_node.blockchain.to_dict())
+                print("starting blockchain is ",blockchain)               
+                data = {
+                    'ring': json.dumps(my_node.ring),
+                    'blockchain': blockchain
+                    }
                 response = requests.post(url, data = data)
                 #if(response.status_code == 200) :
                     #print("successful ring sharing for node ", node[0])
-        return jsonify({'id': id, 'ring':my_node.ring}),200
+        return jsonify({'id': id, 'ring':my_node.ring, 'blockchain':blockchain}),200
     else : 
         return jsonify({'id':id}),200
     
 
 @rest_api.route('/share_ring', methods=['POST'])
 def share_ring():
-    data = json.loads(request.form['ring'])
-    my_node.ring=data
-    url="http://localhost:"+my_node.port +'/receive_block'
-    response=requests.post(url,{'hash':1,'validator':0})
-    if response.status_code==200 :
-        return jsonify(),200
+    ring = json.loads(request.form['ring'])
+    blockch=json.loads(request.form['blockchain'])
+    print("received blockchain is " ,blockch)
+    print("built blockchain is ")
+    for bloc in blockch.values() :
+        newbl=block.Block(bloc['index'],bloc['previous_hash'])
+        newbl.current_hash=bloc['current_hash']
+        newbl.validator=bloc['validator']
+        #build block transaction list
+        print(newbl.to_dict1(),"\n")
+    my_node.ring=ring
+    return jsonify(),200
+    # url="http://localhost:"+my_node.port +'/receive_block'
+    # response=requests.post(url,{'hash':1,'validator':0})
+    # if response.status_code==200 :
+    #     return jsonify(),200
 
 @rest_api.route('/balance',methods=['GET'])
 def balance():

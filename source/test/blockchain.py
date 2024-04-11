@@ -15,3 +15,11 @@ class Blockchain:
         """
         self.blocks_of_blockchain.append(block)
         self.length += 1
+
+    def to_dict(self):
+        blockchain={}
+        count=0
+        for block in self.blocks_of_blockchain :
+            blockchain[str(count)]=block.to_dict1()
+            count +=1
+        return blockchain

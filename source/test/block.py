@@ -33,6 +33,17 @@ class Block:
             "previous_hash": self.previous_hash
         }
         return dict  
+    
+    def to_dict1(self):
+        transaction_li= map(lambda x : x.to_dict(),self.transactions_list)
+        dictio = {
+            "index":self.index,
+            "validator" : self.validator,
+            "transactions_list": dict(list(enumerate(transaction_li))),
+            "previous_hash": self.previous_hash,
+            "current_hash":self.current_hash
+        }
+        return dictio
 
     def myHash(self): 
         """
