@@ -51,9 +51,23 @@ class Block:
         """
         hash_message = {
         'previous_hash': self.previous_hash,
-        'timestamp': self.index,
-        'index': self.index,
-        'transactions_list': self.transactions_list
+        'timestamp': self.index, 
+        'index': self.index, 
+        'transactions_list': self.transactions_list 
+        }
+        block_dump = json.dumps(hash_message.__str__())
+        hash1 = hashlib.sha256(block_dump.encode("ISO-8859-1")).hexdigest()
+        return hash1
+    
+    def myHash1(self): #adam
+        """
+        Calculates block hash and assigns it to current_hash.
+        """
+        hash_message = {
+        'previous_hash': self.previous_hash,
+        #'timestamp': self.index, 
+        #'index': self.index, 
+        #'transactions_list': self.transactions_list 
         }
         block_dump = json.dumps(hash_message.__str__())
         hash1 = hashlib.sha256(block_dump.encode("ISO-8859-1")).hexdigest()

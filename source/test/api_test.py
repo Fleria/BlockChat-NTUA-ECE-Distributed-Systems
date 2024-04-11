@@ -64,6 +64,9 @@ def share_ring():
         newbl.validator=bloc['validator']
         #build block transaction list
         print(newbl.to_dict1(),"\n")
+        my_node.blockchain.add_to_blockchain(newbl) #adam
+        my_node.current_block = block.Block(1, newbl.current_hash) #adam
+        print("the hash of my new block is", newbl.current_hash) #adam
     my_node.ring=ring
     return jsonify(),200
     # url="http://localhost:"+my_node.port +'/receive_block'
@@ -88,19 +91,60 @@ def send_transaction():
         my_node.stake(request.form['id'],request.form['id'], request.form['stake'])
         return jsonify(status=200)
 
-@rest_api.route('/view_block',methods=['GET'] )
+@rest_api.route('/view_block', methods=['GET'])
 def view_block():
     block = {}
-    if(len(my_node.blockchain.blocks_of_blockchain) == 0):
+    if len(my_node.blockchain.blocks_of_blockchain) == 0:
         print("No block has been validated yet!")
         return jsonify(status=400)
+
     last_block = my_node.blockchain.blocks_of_blockchain[-1]
     transactions_list = last_block.transactions_list
     validator = last_block.validator
     index = last_block.index
-    for i, transaction in enumerate(transactions_list):
-        block[str(i)] = transaction.message
-    return jsonify(block=block,validator=validator, index=index, status=200)
+    timestamp = last_block.timestamp
+    capacity = last_block.capacity
+    fees = last_block.fees
+    previous_hash = last_block.previous_hash
+    
+    block_data = {
+        'Block_validator': validator,
+        'Block_index': index,
+        'List_of_transactions': [],
+        'Timestamp': timestamp,
+        'Capacity': capacity,
+        'Fees': fees,
+        'Previous_hash': previous_hash
+    }
+
+    if previous_hash == 1: #genesis block adam
+        transaction_info = {
+            "Sender node": 0,
+            "Receiver node": 0,
+            "Transaction message": 1000*total_nodes
+        }
+        transaction_str = "{" + ", ".join([f"{key}: {value}" for key, value in transaction_info.items()]) + "}"
+        block_data['List_of_transactions'].append(transaction_str)
+
+    else:
+        for i, transaction in enumerate(transactions_list):
+            sender_address = transaction.sender_address
+            receiver_address = transaction.receiver_address
+            for key, value in my_node.ring.items():
+                if key ==  sender_address:
+                    sender_node = value[0]
+                if key == receiver_address:
+                    receiver_node = value[0]
+            transaction_info = {
+                "Sender node": f"{sender_node}",
+                "Receiver node": f"{receiver_node}",
+                "Transaction message": f"{transaction.message}"
+            }
+            transaction_str = "{" + ", ".join([f"{key}: {value}" for key, value in transaction_info.items()]) + "}"
+            block_data['List_of_transactions'].append(transaction_str)
+
+    return jsonify(block=block_data, status=200)
+
 
 @rest_api.route('/validate_transaction',methods=['POST'])
 def validate_transaction() :

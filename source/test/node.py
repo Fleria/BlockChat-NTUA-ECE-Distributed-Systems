@@ -296,7 +296,7 @@ class Node:
         """
         sorted_ring = {k: v for k, v in sorted(self.ring.items(), key=lambda item: int(item[1][0]))}
         print("The seed for the random generator is ", self.current_block.previous_hash)
-        random.seed(int(self.current_block.previous_hash) )
+        random.seed(self.current_block.previous_hash)
         total_stakes = sum(amount[4] for amount in sorted_ring.values())
         threshold = random.uniform(0, total_stakes)
         print("Threshold is "+str(threshold))
