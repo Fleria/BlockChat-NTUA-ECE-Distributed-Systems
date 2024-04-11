@@ -302,13 +302,13 @@ class Node:
         print("Threshold is "+str(threshold))
         current = 0
         for node in sorted_ring.values():
-            print("My id is "+str(node[0]))
+            #print("My id is "+str(node[0]))
             node_index = int(node[4])
             current += node_index
             print(current)
             if current >= threshold:
                 validator = node[0]
-                print("VALIDATOR IS NODE "+str(validator))
+                #print("VALIDATOR IS NODE "+str(validator))
                 break
         self.current_validator = validator
         return validator
