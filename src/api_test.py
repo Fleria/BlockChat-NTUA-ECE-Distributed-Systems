@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask import Flask
+import time
 import requests
 import node 
 import transaction
@@ -9,7 +10,7 @@ import block
 from argparse import ArgumentParser
 from flask import abort
 
-total_nodes=5
+total_nodes=10
 
 rest_api = Blueprint('rest_api', __name__)
 
@@ -76,8 +77,12 @@ def share_ring():
 
 @rest_api.route('/balance',methods=['GET'])
 def balance():
-    bal = my_node.balance()
-    return jsonify({'balance':bal}),200
+    # bal = my_node.balance()
+    # return jsonify({'balance':bal}),200
+    bal ={}
+    for node in my_node.ring.values() :
+        bal[node[0]]=node[3]
+    return jsonify({'bal':json.dumps(bal)}),200
 
 @rest_api.route('/send_transaction',methods=['POST'])
 def send_transaction():
@@ -161,6 +166,7 @@ def validate_transaction() :
 
 @rest_api.route('/receive_transaction',methods=['POST'])
 def receive_transaction() :
+    
     stake = request.form["stake"]
     if stake=='True' : 
         print("This is a stake transaction ")
@@ -183,17 +189,27 @@ def broadcast_block():
 def receive_block():
     validator=request.form['validator']
     hash=request.form['hash']
+    for key,info in my_node.ring.items() :
+        if str(info[0])==validator:
+            print("found the validator and the fees are ", my_node.current_block.fees)
+            my_node.bcclock.acquire()
+            my_node.ring[key][3]+=my_node.current_block.fees
+            my_node.bcclock.release()
+            break 
     my_node.current_block.current_hash=hash
     my_node.current_block.validator=validator
+    my_node.block_time+=time.time() - my_node.current_block.timestamp
     my_node.blockchain.add_to_blockchain(my_node.current_block)
     index=my_node.current_block.index+1
     my_node.current_block=block.Block(index)
     my_node.current_block.previous_hash=hash
+    #my_node.blocklock.release()
     print("Valid block in the blockchain")
     return jsonify(),200
 
 @rest_api.route('/select_validator', methods=['GET'])
 def select_validator():
+    #my_node.blocklock.acquire()
     validator=my_node.select_validator()
     print("The validator is ", validator)
     return jsonify ({'validator_id':validator}),200
@@ -206,4 +222,4 @@ def validate_block():
 @rest_api.route('/blockchain_length',methods=['GET'])
 def blockchain_length():
     length = len(my_node.blockchain.blocks_of_blockchain)
-    return jsonify({'blocks':length}),200
+    return jsonify({'blocks':length, 'block_time':my_node.block_time}),200

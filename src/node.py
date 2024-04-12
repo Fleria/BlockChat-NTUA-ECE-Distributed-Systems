@@ -20,6 +20,7 @@ class Node:
         self.BCC = 1000
         self.nonce = 0
         self.ip=ip
+        self.block_time=0
         self.port=port
         self.id = None
         self.wallet = wallet.Wallet()
@@ -33,6 +34,7 @@ class Node:
         self.message_fees = 0
         self.current_validator = 0
         self.blocklock= Lock()
+        self.bcclock=Lock()
 
     def register_node_to_ring(self, id, ip, port, public_key, balance): #called only by bootstrap 
         self.ring[public_key] = [id, ip, port, balance, self.my_stake]
@@ -128,10 +130,17 @@ class Node:
                 address = 'http://' + node[1] +':'+ node[2] + endpoint
                 response = requests.post(address, data=transaction.to_dict())
                 responses.append(response.status_code)
+        
         if responses[0] >=400 :
             print("Mode couldn't receive transaction ")
             return False
-        if responses[0] == 205: #block is full
+        self.blocklock.acquire()
+        full=True
+        for res in responses :
+            if res == 200 :
+                full=False
+                break
+        if full : #block is full
             validators=[]
             endpoint='/select_validator'
             for node in self.ring.values() :
@@ -147,10 +156,7 @@ class Node:
                     endpoint='/validate_block'
                     address = 'http://' + node[1] +':'+ node[2] + endpoint
                     response=requests.get(address)
-                    hash=response.json()['hash']
-                    for key,info in self.ring.items() :
-                        if info[0]==validator:
-                            self.ring[key][3]+=self.current_block.fees
+                    hash=response.json()['hash']  
                     #print('Calculated block hash as ' , hash)
                     for node in self.ring.values():
                         endpoint='/receive_block'
@@ -158,6 +164,7 @@ class Node:
                         response=requests.post(address,{'hash':hash,'validator':validator})
                         if response.status_code==200 :
                             print("Block successfuly validated")
+        self.blocklock.release()
         print(" successfully broadcasted the transaction from node " + str(target_port) + " for all nodes"+"\n")
         return True
 
@@ -210,6 +217,7 @@ class Node:
             print("New stake is ", self.ring[transaction.receiver_address][4])
         
         else:
+            # self.blocklock.acquire()
             if transaction.sender_address == self.wallet.address or transaction.receiver_address == self.wallet.address :
                 # print("I am either the server or the receiver of the trasnaction")
                 # sender_wallet = sender_node_info[4]
@@ -225,7 +233,9 @@ class Node:
 
             print("Sender is", target_port)
             print("Old sender amount" ,self.ring[transaction.sender_address][3] )
+            self.bcclock.acquire()
             self.ring[transaction.sender_address][3] -= (transaction.amount) #subtract the amount from sender, no matter the transaction type
+            self.bcclock.release()
             print("New sender amount" ,self.ring[transaction.sender_address][3] )
             
             if transaction.type == 0: #coin 
@@ -245,8 +255,10 @@ class Node:
                 self.ring[transaction.sender_address][3] += self.ring[transaction.sender_address][4]
                 self.ring[transaction.sender_address][4] = transaction.amount
                 print("Stake transaction added") #testing
-            
+            self.blocklock.acquire()
             if self.current_block.check_and_add_transaction_to_block(transaction) == False :
+                self.blocklock.release()
+                # self.blocklock.release()
                 return 205 #if current block is at capacity, execute proof of stake and create new block
                 # print("locking the the blocklock")
                 # self.blocklock.acquire()
@@ -289,6 +301,7 @@ class Node:
                 # # self.current_block.current_hash = self.current_block.myHash
                 # self.current_block.index+=1
                 # self.blocklock.release()
+            self.blocklock.release()
 
     def select_validator(self):
         """
@@ -298,6 +311,7 @@ class Node:
         adds the next node's stakes and tries again.
         This is the mint_block function.
         """
+        
         sorted_ring = {k: v for k, v in sorted(self.ring.items(), key=lambda item: int(item[1][0]))}
         print("The seed for the random generator is ", self.current_block.previous_hash)
         random.seed(self.current_block.previous_hash)

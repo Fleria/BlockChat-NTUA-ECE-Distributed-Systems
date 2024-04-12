@@ -5,6 +5,7 @@ import json
 from flask import Flask, jsonify, request, render_template
 from argparse import ArgumentParser
 import os
+import time 
 
 my_ip = 'localhost'
 total_nodes = 5
@@ -33,7 +34,7 @@ balance: print out your wallet balance. \n
 def read_transactions_from_file(file_path):
         file_number = int(my_port) - 5000
         file_name = f"trans{file_number}.txt"
-        file_path = os.path.join('5nodes', file_name)
+        file_path = os.path.join('10nodes', file_name)
         with open(file_path, 'r') as file:
             transactions = file.readlines()
         print("i got the file, it's", file_path)
@@ -57,6 +58,7 @@ for action in transactions:
         address = 'http://' + my_ip + ':' + my_port + endpoint
         stake_flag = 'False'
         response = requests.post(address, data={'id': recipient_id, 'message': amount, 'sender': sender, 'stake_flag': stake_flag})
+        time.sleep(0.400)
     
     elif words[0] == 'stake':
         stake = words[1].strip()

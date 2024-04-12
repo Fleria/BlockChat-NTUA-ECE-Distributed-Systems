@@ -132,7 +132,7 @@ while True:
             address = 'http://' + my_ip + ':' + my_port + endpoint
             response = requests.get(address)
             data = response.json()
-            print('Node balance:', data['balance'])
+            print(data['bal'])
             print("\n")
 
         elif words[0] == 'length':
@@ -141,6 +141,8 @@ while True:
             response = requests.get(address)
             data = response.json()
             print(" the blockchain has ", data['blocks'] , " length\n")
+            print(" the block time is " , int(data['block_time'])/int(data['blocks']))
+
         elif words[0] == 'help':
             print(help_string)
         

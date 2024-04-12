@@ -22,7 +22,7 @@ class Block:
         self.validator = 0 #debugging, None
         self.index = index 
         self.transactions_list = []
-        self.capacity = 2
+        self.capacity = 5
         self.current_hash = None
         self.fees = 0
 

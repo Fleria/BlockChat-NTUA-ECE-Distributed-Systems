@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.register_blueprint(rest_api)
 
 
-total_nodes = 5
+total_nodes = 10
 
 if __name__ == '__main__':
     parser = ArgumentParser()
