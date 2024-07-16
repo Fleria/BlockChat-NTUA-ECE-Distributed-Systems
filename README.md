@@ -29,3 +29,11 @@ of the last validated blockchain block.
 - stake <amount> : releases the last stake of the node and registers <amount> as the new stake.
 
 - help : shows list of functions available.
+
+
+# Contributors
+Kapetis Adam - ([adamkapetis](https://github.com/adamkapetis)) 
+
+Arkadopoulou Eleftheria - ([Fleria](https://github.com/Fleria))
+
+Andreadis Dimitrios - ([DimitrisAndreadis](https://github.com/DimitrisAndreadis)) 
