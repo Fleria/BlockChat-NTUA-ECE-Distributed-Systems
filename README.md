@@ -17,7 +17,8 @@ client -p port
 ```
 
 Client functions include:
--t <recipient_id> <message> : user sends a transaction to the user with an id of <recipient_id>. 
+
+- t <recipient_id> <message> : user sends a transaction to the user with an id of <recipient_id>. 
 The transaction is a coin transaction if <message> is a number, otherwise it is a message transaction.
 
 - balance : shows balance of BC wallet of user.
