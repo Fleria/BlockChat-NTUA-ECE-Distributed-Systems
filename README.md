@@ -1,7 +1,7 @@
 # BlockChat
 Final project of the course Distributed Systems - 9th semester, Electrical Computer Engineering, National Technical University of Athens.
 
-Implementation of BlockChat, a blockchain-based platform for message exchanges and transaction recording. 
+Implementation of BlockChat, a blockchain-based message exchanging platform. 
 
 Implementation uses Python 3.12 and REST API.
 
